@@ -9,8 +9,7 @@ TERM_ENCODING = getattr(sys.stdin, 'encoding', None)
 PROMPT_PREFIX = '> '
 
 def yes_or_no(text):
-    d = {}
-    ans = do_prompt(d, text + " (Yes/No)?")
+    ans = do_prompt(text + " (Yes/No)?")
     if ans in ['Yes', 'Y', 'y']:
         return True
     else:
@@ -24,7 +23,7 @@ def nonempty(x):
         raise ValidationError("Please enter some text.")
     return x
 
-def do_prompt(d, text, key=None, default=None, validator=nonempty):
+def do_prompt(text, key=None, default=None, validator=nonempty):
     while True:
         if default:
             prompt = PROMPT_PREFIX + '%s [%s]: ' % (text, default)
@@ -50,7 +49,4 @@ UTF-8 or Latin-1.'''
             print '* ' + str(err)
             continue
         break
-    if not key is None:
-        d[key] = x
-    else:
-        return x
+    return x

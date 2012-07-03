@@ -6,12 +6,14 @@ import os
 
 from ConfigParser import SafeConfigParser
 
-def parse_ini():
-    parser = SafeConfigParser()
-    parser.read(os.path.join(os.getenv("HOME"), ".pmrc"))
-    return parser
-
 # Global configuration variables
+config_file=None
 dry_run = False
 project_root = os.getenv("HOME")
 repos=None
+
+def parse_ini(cfg_file=os.path.join(os.getenv("HOME"), ".pmrc")):
+    parser = SafeConfigParser()
+    parser.read(cfg_file)
+    return parser
+

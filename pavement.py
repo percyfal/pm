@@ -15,7 +15,7 @@ setup(
         "bcbio-nextgen >= 0.2",
         ],
     test_suite = 'nose.collector',
-    scripts = ['scripts/pm.py', 'scripts/init.py']
+    scripts = ['scripts/pm', 'scripts/init.py']
 )
 
 

@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+"""Project management tools.
+
+Usage:
+    pm  [options] <command>
+
+Command: init                  Initialize a project
+         clean                 Remove obsolete files
+         deliver               Deliver data
+         compress              Compress data
+         sbatch_helper         Create sbatch scripts
+         statusdb              Connect to statusdb
+
+Options: -c, --config          Config file [~/.pmrc]
+"""
+
+import os
+import sys
+import subprocess
+
+import pmtools.config
+from optparse import OptionParser
+
+COMMANDS = ["init", "clean", "deliver", "compress", "sbatch_helper", "statusdb"]
+
+def main(cmd, opts, pm_config_file):
+    
+    if not cmd in COMMANDS:
+        print >> sys.stderr, "[main] Unrecognized command '%s'" % cmd
+        sys.exit()
+
+    # Check existence of config file
+    if not os.path.exists(pm_config_file):
+        print >> sys.stderr, "[main] No such file %s" % pm_config_file
+        return False
+
+    cl = ["%s.py" % cmd, pm_config_file] + opts
+    subprocess.check_call(cl, stdout=sys.stdout, stderr=sys.stderr)
+
+if __name__ == "__main__":
+    parser = OptionParser()
+    parser.add_option("-c", "--config",dest="config",  action="store", default=os.path.join(os.getenv("HOME"), ".pmrc"))
+    (options, args) = parser.parse_args()
+
+    if len(args) < 1:
+        print __doc__
+        sys.exit()
+
+    cmd = args[0]
+    opts = args[1:]
+
+    # Set configuration file
+    main(cmd, opts, options.config)
