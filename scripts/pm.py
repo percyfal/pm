@@ -48,7 +48,7 @@ def _validate_config():
         
 
 if __name__ == "__main__":
-    if len(sys.argv) < 1:
+    if len(sys.argv) < 2:
         print __doc__
         sys.exit()
 
