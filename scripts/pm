@@ -17,37 +17,34 @@ Options: -c, --config          Config file [~/.pmrc]
 import os
 import sys
 import subprocess
+import argparse
 
 import pmtools.config
-from optparse import OptionParser
 
-COMMANDS = ["init", "clean", "deliver", "compress", "sbatch_helper", "statusdb"]
 
-def main(cmd, opts, pm_config_file):
-    
-    if not cmd in COMMANDS:
-        print >> sys.stderr, "[main] Unrecognized command '%s'" % cmd
-        sys.exit()
-
-    # Check existence of config file
-    if not os.path.exists(pm_config_file):
-        print >> sys.stderr, "[main] No such file %s" % pm_config_file
-        return False
-
-    cl = ["%s.py" % cmd, pm_config_file] + opts
-    subprocess.check_call(cl, stdout=sys.stdout, stderr=sys.stderr)
+def init(args):
+    print "In init"
+    print args.config
 
 if __name__ == "__main__":
-    parser = OptionParser()
-    parser.add_option("-c", "--config",dest="config",  action="store", default=os.path.join(os.getenv("HOME"), ".pmrc"))
-    (options, args) = parser.parse_args()
+    parser = argparse.ArgumentParser(description="", prog="pm")
+    #parser = OptionParser()
+    #parser.add_argument("-c", "--config",dest="config",  action="store", default=os.path.join(os.getenv("HOME"), ".pmrc"))
 
-    if len(args) < 1:
-        print __doc__
+    parser.add_argument("-c", "--config",dest="config",  action="store", default=os.path.join(os.getenv("HOME"), ".pmrc"))
+    # The commands 
+    subparsers = parser.add_subparsers()
+    parser_init = subparsers.add_parser("init", )
+    parser_init.add_argument("-n", "--dry_run", dest="dry_run", action="store_true", default=False) 
+    parser_init.set_defaults(func=init)
+
+    ## Parse and call the function
+    args = parser.parse_args()
+
+    ## Check existence of config file
+    if not os.path.exists(args.config):
+        print >> sys.stderr, "[main] No such file %s" % args.config
         sys.exit()
+        ##
+    args.func(args)
 
-    cmd = args[0]
-    opts = args[1:]
-
-    # Set configuration file
-    main(cmd, opts, options.config)
