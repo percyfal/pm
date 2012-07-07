@@ -20,27 +20,47 @@ import subprocess
 import argparse
 
 import pmtools.config
-
+from pmtools.templates import get_make_templates
 
 def init(args):
     print "In init"
     print args.config
+    make = get_make_templates()
+    print make['Makefile'].render()
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="", prog="pm")
-    #parser = OptionParser()
-    #parser.add_argument("-c", "--config",dest="config",  action="store", default=os.path.join(os.getenv("HOME"), ".pmrc"))
-
+    parser = argparse.ArgumentParser(description="", prog="pm", help="Help")
     parser.add_argument("-c", "--config",dest="config",  action="store", default=os.path.join(os.getenv("HOME"), ".pmrc"))
-    # The commands 
-    subparsers = parser.add_subparsers()
-    parser_init = subparsers.add_parser("init", )
-    parser_init.add_argument("-n", "--dry_run", dest="dry_run", action="store_true", default=False) 
-    parser_init.set_defaults(func=init)
 
+    # # The commands 
+    parser_subparsers = parser.add_subparsers()
+    parser_projects = parser_subparsers.add_parser("projects")
+    parser_clean = parser_subparsers.add_parser("clean")
+    parser_statusdb = parser_subparsers.add_parser("statusdb")
+    parser_production = parser_subparsers.add_parser("production")
+    parser_init = parser_subparsers.add_parser("init")
+    
+    ## init subcommands
+    parser_init_subparser = parser_init.add_subparsers()
+    ## make
+    parser_init_make = parser_init_subparser.add_parser("make")
+    # parser_init.add_argument("-n", "--dry_run", dest="dry_run", action="store_true", default=False) 
+    # parser_init.set_defaults(func=init)
     ## Parse and call the function
     args = parser.parse_args()
-
+    # if args.program=="clean":
+    #     print "clean"
+    # elif args.program=="init":
+    #     print "init"
+    #     init_parser = argparse.ArgumentParser(description="", prog="init")
+    #     init_parser.add_argument("git", action="store")
+    #     init_args = init_parser.parse_args()
+    #     print init_args
+    # else:
+    #     print >> sys.stderr, "[main] No such program %s" % args.program
+    #     sys.exit()
+    print args
+    sys.exit()
     ## Check existence of config file
     if not os.path.exists(args.config):
         print >> sys.stderr, "[main] No such file %s" % args.config

@@ -15,7 +15,9 @@ setup(
         "bcbio-nextgen >= 0.2",
         ],
     test_suite = 'nose.collector',
-    scripts = ['scripts/pm', 'scripts/init.py']
+    scripts = ['scripts/pm', 'scripts/init.py'],
+    package_dir = {'pmtools':'pmtools'},
+    package_data = {'pmtools':['templates/tpl/make/*']}
 )
 
 
