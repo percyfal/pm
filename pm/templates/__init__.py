@@ -1,6 +1,4 @@
-"""
-Templates configuration
-"""
+"""Templates configuration"""
 
 import os
 import sys
