@@ -1,6 +1,9 @@
 import os
 from cement.core import backend, handler, output
 from cement.utils import test, shell
+
+LOG = backend.minimal_logger(__name__)
+
 from pm.cli import PmMainApp
 
 ## Set default configuration
@@ -53,9 +56,12 @@ class PmTest(test.CementTestCase):
         
     def _run_app(self):
         try:
+            LOG.info("setting up app")
             self.app.setup()
+            LOG.info("running  app")
             self.app.run()
             #self.app.render(self.app._output_data)
         finally:
+            LOG.info("closing app")
             self.app.close()
             

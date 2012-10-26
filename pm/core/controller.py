@@ -21,14 +21,17 @@ class PmBaseController(controller.CementBaseController):
 
     def _setup(self, app):
         super(PmBaseController, self)._setup(app)
+        self.app.args.add_argument('-t',help="time")
 
     @controller.expose(hide=True)
     def default(self):
         print self._help_text
 
+
+
 class PmAbstractBaseController(controller.CementBaseController):
-    """
-    This is the pm abstract base controller.
+    """ This is the pm abstract base controller. The controller allows
+    shared options between different commands.
 
     All controllers should inherit from this class.
     """
