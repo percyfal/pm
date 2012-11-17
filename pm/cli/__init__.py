@@ -23,6 +23,6 @@ class PmMainApp(foundation.CementApp):
         super(PmMainApp, self).setup()
         ## Setup command handler here
         ## Setup output data handling here
-        self._output_data = dict(stdout = cStringIO(),
-                                 stderr = cStringIO(),
+        self._output_data = dict(stdout = StringIO(),
+                                 stderr = StringIO(),
                                  tables = OrderedDict())

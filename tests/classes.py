@@ -60,7 +60,7 @@ class PmTest(test.CementTestCase):
             self.app.setup()
             LOG.info("running  app")
             self.app.run()
-            #self.app.render(self.app._output_data)
+            self.app.render(self.app._output_data)
         finally:
             LOG.info("closing app")
             self.app.close()

@@ -9,9 +9,11 @@ class ApplicationTest(PmTest):
         self._run_app()
 
     ##Why doesn't the help function work?!?
-    @unittest.expectedFailure
+    #@unittest.expectedFailure
     def test_application_help(self):
         """Test passing help to main application"""
         self.app = self.make_app(argv=['--help'])
-        self._run_app()
+        self.app.setup()
+        res = self.app.run()
+        pass
 

@@ -5,6 +5,19 @@ import re
 
 from cement.core import interface, handler, controller, backend
 
+
+## See paver.tasks.needs
+def requires(*args):
+    """Specifies arguments which this task needs to run"""
+    print args
+    def entangle(func):
+        req = args
+        print dir(func)
+        print func.label
+        print func.func_dict
+        print func.__class__
+    return entangle
+
 class PmBaseController(controller.CementBaseController):
     """
     This is the pm base controller.
@@ -21,13 +34,16 @@ class PmBaseController(controller.CementBaseController):
 
     def _setup(self, app):
         super(PmBaseController, self)._setup(app)
-        self.app.args.add_argument('-t',help="time")
 
     @controller.expose(hide=True)
     def default(self):
         print self._help_text
 
-
+    @requires("function")
+    @controller.expose()
+    def config(self):
+        print "Config"
+        
 
 class PmAbstractBaseController(controller.CementBaseController):
     """ This is the pm abstract base controller. The controller allows
@@ -37,7 +53,6 @@ class PmAbstractBaseController(controller.CementBaseController):
     """
     class Meta:
         label = 'abstract-base'
-
 
 class PmAbstractExtendedBaseController(PmAbstractBaseController):
     """

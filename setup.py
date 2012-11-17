@@ -21,9 +21,7 @@ setup(name = "pm",
         "PIL",
         "pyPdf",
         "logbook >= 0.4",
-        # pandas screws up installation; tries to look for local site
-        # packages and not in virtualenv
-        #"pandas >= 0.9",
+        "pandas >= 0.9",
         "biopython",
         ],
       test_suite = 'nose.collector',

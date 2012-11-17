@@ -1,13 +1,13 @@
 """test controller"""
+from cement.core import backend
 from ..classes import PmTest
+from pm.core.controller import PmBaseController
 
 class ControllerTest(PmTest):
-    def test_controller(self):
-        """Test setting up a controller"""
-        self.app = self.make_app()
-        self._run_app()
+    def test_base_controller(self):
+        """Test PmBaseController"""
+        pm = PmBaseController()
+        #print pm.pargs
 
-    def test_controller_help(self):
-        """Test passing help"""
-        self.app = self.make_app(argv=['-h'])
-        self._run_app()
+        pm.pargs = ["test"]
+        pm.config
