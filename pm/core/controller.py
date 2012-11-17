@@ -6,7 +6,8 @@ import re
 from cement.core import interface, handler, controller, backend
 
 
-## See paver.tasks.needs
+# See paver.tasks.needs
+# Will this even work? No way to get function name 
 def requires(*args):
     """Specifies arguments which this task needs to run"""
     print args
@@ -26,7 +27,7 @@ class PmBaseController(controller.CementBaseController):
     """
     class Meta:
         label = 'base'
-        description = 'pm base controller'
+        description = 'pm2 base controller'
         arguments = [
             (['-n', '--dry_run'], dict(help="dry run - don't actually do anything", action="store_true", default=False)),
             (['--force'], dict(help="force execution and bypass yes/no questions", action="store_true", default=False)),
@@ -39,7 +40,7 @@ class PmBaseController(controller.CementBaseController):
     def default(self):
         print self._help_text
 
-    @requires("function")
+    #@requires("function")
     @controller.expose()
     def config(self):
         print "Config"
@@ -53,6 +54,15 @@ class PmAbstractBaseController(controller.CementBaseController):
     """
     class Meta:
         label = 'abstract-base'
+
+    # FIX ME: would want this to be a decorator
+    def _check_pargs(self, pargs, msg=None):
+        """Check that required list of pargs are present"""
+        for p in pargs:
+            if not self.pargs.__getattribute__(p):
+                self.app.log.warn("Required argument '{}' lacking".format(p))
+                return False
+        return True
 
 class PmAbstractExtendedBaseController(PmAbstractBaseController):
     """

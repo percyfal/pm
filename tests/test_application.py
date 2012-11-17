@@ -1,10 +1,11 @@
 """Main application test"""
 import unittest
-from classes import PmTest
+from utils.classes import PmTest, BASEDIR
 
 class ApplicationTest(PmTest):
     def test_application(self):
         """Test setting up main application"""
+        print BASEDIR
         self.app = self.make_app()
         self._run_app()
 

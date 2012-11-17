@@ -1,4 +1,5 @@
 """pm cli module"""
+import os
 from cStringIO import StringIO
 from collections import OrderedDict
 from cement.core import foundation
@@ -10,9 +11,10 @@ class PmMainApp(foundation.CementApp):
     Main pm application.
     """
     class Meta:
-        label = "pm"
+        label = "pm2"
         base_controller = PmBaseController
         log_handler = PmLogHandler
+        project_config = os.path.join(os.getenv("HOME"), ".pm", "projects.yaml")
         ## Add command handler here
 
     def __init__(self, **kw):

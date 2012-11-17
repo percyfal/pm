@@ -4,6 +4,8 @@ from cement.utils import test, shell
 
 LOG = backend.minimal_logger(__name__)
 
+BASEDIR = os.path.join(os.path.dirname(__file__), os.pardir)
+
 from pm.cli import PmMainApp
 
 ## Set default configuration

@@ -23,6 +23,7 @@ FLOWCELL = {"C003CCCXX": "120924_SN0002_0003_AC003CCCXX",
             "B002BBBXX": "121015_SN0001_0002_BB002BBBXX"}
 ARCHIVE = os.path.join(filedir, "data", "archive")
 PRODUCTION = os.path.join(filedir, "data", "production")
+PROJECTDIR = os.path.join(filedir, "data", "projects")
 GENOMES = os.path.join(filedir, "data", "genomes")
 CONFIG = os.path.join(filedir, "data", "config")
 tmpdir = os.path.join(os.path.dirname(__file__), "tmp")
@@ -58,6 +59,7 @@ index_files = {'sam':{'file':os.path.join(CONFIG, "tool-data", "sam_fa_indices.l
                'liftOver':{'file':os.path.join(CONFIG, "tool-data", "liftOver.loc"), 'data':StringIO()}
                }
 
+# FIX ME: no need for archive or production tests here
 def setUpModule():
     """Set up test files for scilifelab pipeline tests. The setup
     covers some typical situations, such as multiplexing, samples run
@@ -76,7 +78,7 @@ def setUpModule():
     def filter_fn(f):
         return re.search(pattern, f) != None
 
-    n = sum([len(filtered_walk(os.path.join(PRODUCTION, x), filter_fn)) for x in PROJECTS])
+    n = sum([len(filtered_walk(os.path.join(PROJECTDIR, x), filter_fn)) for x in PROJECTS])
     if n == NSAMPLES:
         LOG.info("All samples have been run, requirements for downstream tests satisfied")
         return
@@ -130,12 +132,13 @@ def setUpModule():
     yamlfiles = []
     ## http://stackoverflow.com/questions/952914/making-a-flat-list-out-of-list-of-lists-in-python
     ## [item for sublist in l for item in sublist]
-    yamlfiles = [item for sublist in [filtered_walk(os.path.join(PRODUCTION, x), filter_fn) for x in PROJECTS] for item in sublist]
+    yamlfiles = [item for sublist in [filtered_walk(os.path.join(PROJECTDIR, x), filter_fn) for x in PROJECTS] for item in sublist]
     orig_dir = os.path.abspath(os.curdir)
     for yamlconfig in yamlfiles:
         try:
             LOG.info("cding to {}".format(os.path.abspath(os.curdir)))
             os.chdir(os.path.dirname(yamlconfig))
+            LOG.info("cding to {}".format(os.path.dirname(yamlconfig)))
             cl = ["automated_initial_analysis.py", POSTPROCESS, os.path.join(os.path.pardir, os.path.basename(os.path.dirname(yamlconfig))), yamlconfig]
             if not os.path.exists(os.path.join(os.path.dirname(yamlconfig), "14_write_metrics.txt")):
                 LOG.info("Running pipeline: {}".format(" ".join(cl)))

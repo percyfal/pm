@@ -2,7 +2,9 @@
 
 Basic organization of experimental units. A project is structured as 
 
-PROJECTID/data/SAMPLE/SAMPLERUN
+PROJECTID/data/SAMPLE/SAMPLERUNGROUP/
+
+In the SAMPLERUNGROUP folder
 
 A project configuration consists of a dictionary with (at least) the following hierarchy 
 
