@@ -27,6 +27,9 @@ app = PmMainApp(base_controller = PmBaseController,
 try:
     handler.register(AdminController)
     app.setup()
+    # Init project configuration
+    app.config.parse_file(app._meta.project_config)
+    
     with app.log.log_setup.applicationbound():
         app.run()
     app.render(app._output_data)

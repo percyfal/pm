@@ -15,7 +15,7 @@ class PmMainApp(foundation.CementApp):
         label = "pm2"
         base_controller = PmBaseController
         log_handler = PmLogHandler
-        project_config = os.path.join(os.getenv("HOME"), ".pm", "projects.yaml")
+        project_config = os.path.join(os.getenv("HOME"), ".pm2", "projects.yaml")
         ## Add command handler here
         config_handler = ext_yamlconfigparser.YAMLParserConfigHandler
         """

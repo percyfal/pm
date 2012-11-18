@@ -13,7 +13,7 @@ import yaml
 from ConfigParser import NoSectionError, NoOptionError, DuplicateSectionError
 from cement.core import backend, config, handler
 
-from pm.lib.utils import update
+from pm.lib.utils import update, config_to_dict
 
 LOG = backend.minimal_logger(__name__)
 
@@ -73,6 +73,8 @@ class YAMLParserConfigHandler(config.CementConfigHandler):
         try:
             with open(file_path) as fp:
                 _sections = yaml.load(fp)
+                if _sections is None:
+                    _sections = {}
             self._sections = update(self._sections, _sections)
         except IOError:
             return False
@@ -167,7 +169,7 @@ class YAMLParserConfigHandler(config.CementConfigHandler):
                 raise NoSectionError(section)
         if subsection:
             try:
-                sectdict = sectdict[section]
+                sectdict = sectdict[subsection]
             except KeyError:
                 raise NoSectionError(subsection)
         sectdict[self.optionxform(option)] = value
@@ -175,8 +177,10 @@ class YAMLParserConfigHandler(config.CementConfigHandler):
     def optionxform(self, optionstr):
         return optionstr.lower()
 
-    def has_section(self, section):
+    def has_section(self, section, subsection=None):
         """Indicate whether the named section is present in the configuration"""
+        if subsection:
+            return subsection in self._sections.get(section, {})
         return section in self._sections
 
     def get_sections(self):
@@ -217,15 +221,35 @@ class YAMLParserConfigHandler(config.CementConfigHandler):
             if subsection in self._sections[section]:
                 raise DuplicateSectionError(section)
             self._sections[section][subsection] = self._dict()
-            print self._sections
         else:
             if section in self._sections:
                 raise DuplicateSectionError(section)
             self._sections[section] = self._dict()
+
+    def del_section(self, section, subsection=None):
+        """
+        Deletes a block section to the config.
         
-    def save(self):
-        """Save configuration file"""
-        print self._meta.config_files
+        :param section: The section to delete.
+        :param subsection: The section to delete.
+        
+        """
+        if subsection:
+            if not self.has_section(section):
+                raise NoSectionError(section)
+            if not subsection in self._sections[section]:
+                raise NoSectionError(subsection)
+            del self._sections[section][subsection]
+        else:
+            if not self.has_section(section):
+                raise NoSectionError(section)
+            del self._sections[section]
+        
+    def save(self, config, filename):
+        """Save configuration to file"""
+        config_d = config_to_dict(config)
+        with open(filename, "w") as fh:
+            fh.write(yaml.safe_dump(config_d, default_flow_style=False, allow_unicode=True, width=1000))
 
 
 def load():

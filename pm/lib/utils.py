@@ -13,3 +13,19 @@ def update(d, u, override=True):
         else:
             d[k] = u[k]
     return d
+
+def config_to_dict(d):
+    """Convert OrderedDict entries to dict for yaml output"""
+    u = {}
+    for k, v in d.iteritems():
+        u[k] = {}
+        if isinstance(v, collections.Mapping):
+            for x, y in v.iteritems():
+                if isinstance(y, collections.Mapping):
+                    u[k][x] = dict(y)
+                else:
+                    u[k][x] = y
+        else:
+            u[k] = v
+    return u
+        
