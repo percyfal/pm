@@ -57,7 +57,6 @@ class PmLogHandler(log.CementLogHandler):
         The section of the application configuration that holds this handlers
         configuration.
         """
-        
         config_defaults = dict(
             file=None,
             level='INFO',
@@ -109,7 +108,6 @@ class PmLogHandler(log.CementLogHandler):
         with self._console_handler.applicationbound():
             self.debug("logging initialized for '%s' using PmLogHandler" % \
                            self._meta.namespace)
-
 
     def set_level(self, level):
         """

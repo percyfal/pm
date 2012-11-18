@@ -5,6 +5,7 @@ from collections import OrderedDict
 from cement.core import foundation
 from pm.core.controller import PmBaseController
 from pm.core.log import PmLogHandler
+from pm.ext import ext_yamlconfigparser
 
 class PmMainApp(foundation.CementApp):
     """
@@ -16,6 +17,10 @@ class PmMainApp(foundation.CementApp):
         log_handler = PmLogHandler
         project_config = os.path.join(os.getenv("HOME"), ".pm", "projects.yaml")
         ## Add command handler here
+        config_handler = ext_yamlconfigparser.YAMLParserConfigHandler
+        """
+        A handler class that implements the IConfig interface. 
+        """
 
     def __init__(self, **kw):
         super(PmMainApp, self).__init__(**kw)
@@ -28,3 +33,5 @@ class PmMainApp(foundation.CementApp):
         self._output_data = dict(stdout = StringIO(),
                                  stderr = StringIO(),
                                  tables = OrderedDict())
+
+

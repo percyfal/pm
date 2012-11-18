@@ -8,7 +8,7 @@ from pm.core.controller import PmBaseController
 from pm.core.admin import AdminController
 #from pm.core.output import PmOutputHandler
 
-CONFIGFILE=os.path.join(os.getenv("HOME"), ".pm2", "pm.ini")
+CONFIGFILE=os.path.join(os.getenv("HOME"), ".pm2", "pm.yaml")
 PLUGINDIR=os.path.join(os.getenv("HOME"), ".pm2", "plugins")
 PLUGINCONFIGDIR=os.path.join(os.getenv("HOME"), ".pm2", "plugins.d")
 
@@ -28,11 +28,6 @@ try:
     handler.register(AdminController)
     app.setup()
     with app.log.log_setup.applicationbound():
-        try:
-            app.config.parse_file(CONFIGFILE)
-        except:
-            app.log.warn("No config file %s; please create and set relevant config sections" % CONFIGFILE)
-            sys.exit()
         app.run()
     app.render(app._output_data)
 finally:
