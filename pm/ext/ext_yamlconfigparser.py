@@ -10,7 +10,7 @@ import os
 import sys
 import yaml
 
-from ConfigParser import NoSectionError, NoOptionError
+from ConfigParser import NoSectionError, NoOptionError, DuplicateSectionError
 from cement.core import backend, config, handler
 
 from pm.lib.utils import update
@@ -123,7 +123,7 @@ class YAMLParserConfigHandler(config.CementConfigHandler):
             del opts['__name__']
         return opts.keys()
 
-    def has_key(self, section, key):
+    def has_key(self, section, key, subsection=None):
         """
         Return whether or not a 'section' has the given 'key'.
         
@@ -156,7 +156,7 @@ class YAMLParserConfigHandler(config.CementConfigHandler):
             raise NoOptionError(option, section)
         return self._sections[section][option]
      
-    def set(self, section, option, value=None):
+    def set(self, section, option, value=None, subsection=None):
         """Set an option"""
         if not section:
             sectdict = self._defaults
@@ -165,6 +165,11 @@ class YAMLParserConfigHandler(config.CementConfigHandler):
                 sectdict = self._sections[section]
             except KeyError:
                 raise NoSectionError(section)
+        if subsection:
+            try:
+                sectdict = sectdict[section]
+            except KeyError:
+                raise NoSectionError(subsection)
         sectdict[self.optionxform(option)] = value
 
     def optionxform(self, optionstr):
@@ -199,17 +204,30 @@ class YAMLParserConfigHandler(config.CementConfigHandler):
             dict_obj[key] = self.get(section, key, subsection=subsection)
         return dict_obj
 
-    def add_section(self, section):
+    def add_section(self, section, subsection=None):
         """
         Adds a block section to the config.
         
         :param section: The section to add.
         
         """
-        if section in self._sections:
-            raise DuplicateSectionError(section)
-        self._sections[section] = self._dict()
+        if subsection:
+            if not self.has_section(section):
+                raise NoSectionError(section)
+            if subsection in self._sections[section]:
+                raise DuplicateSectionError(section)
+            self._sections[section][subsection] = self._dict()
+            print self._sections
+        else:
+            if section in self._sections:
+                raise DuplicateSectionError(section)
+            self._sections[section] = self._dict()
         
+    def save(self):
+        """Save configuration file"""
+        print self._meta.config_files
+
+
 def load():
     """Called by the framework when the extension is 'loaded'."""
     handler.register(YAMLParserConfigHandler)
