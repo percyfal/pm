@@ -3,6 +3,13 @@ import os
 
 from cement.core import interface, handler
 
+
+class ConfigDefaults(dict):
+    """Represent a config defaults section for wrappers"""
+    def __init__(self, **kw):
+        self.opts = kw.get("opts", None) # Program options as a string
+        
+
 def wrapper_interface_validator(cls, obj):
     members = [
         'cl', 
@@ -10,6 +17,14 @@ def wrapper_interface_validator(cls, obj):
         'version',
         ]
     interface.validate(IWrapper, obj, members)
+
+# Notes
+#
+# The config_defaults section is a (interfaced?) dictionary that goes
+# to the configuration file. It should among other things contain
+# - opts
+# - label
+#
 
 class IWrapper(interface.Interface):
     
@@ -33,11 +48,8 @@ class IWrapper(interface.Interface):
         """Command argument list"""
         command_template = None
         """Command template"""
-        opts = ""
-        """Program options as string"""
-
+        config_defaults = ConfigDefaults()
         
-
     Meta = interface.Attribute("Handler Meta-data")
 
     def _setup(app_obj):
@@ -97,22 +109,26 @@ class BaseWrapper(handler.CementBaseHandler):
     def cmd_args(self):
         return [self._meta.exe]
 
+class JavaConfigDefaults(ConfigDefaults):
+    """Configuration defaults for java programs"""
+    def __init__(self, **kw):
+        super(JavaConfigDefaults, self).__init__(**kw)
+        self.memory = kw.get("memory", "3g")
+        self.opts = kw.get("opts", 'VALIDATION_STRINGENCY=SILENT')
+
 class JavaMixin(object):
     """Mixin for java based programs"""
     class Meta:
-        opts = 'VALIDATION_STRINGENCY=SILENT '
-        """Java program options"""
-
-        memory = '3g'
-        """Java memory"""
-
         exe = 'java'
         """Program"""
 
         jarfile = None
         """Jar file"""
 
-        cmd_args = [exe, '-jar', opts]
+        config_defaults = JavaConfigDefaults(opts="oeu")
+        """Default java configuration"""
+        print config_defaults
+        cmd_args = [exe, '-jar', config_defaults["opts"]]
         """Command arguments"""
 
     def __init__(self):
