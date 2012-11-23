@@ -3,8 +3,11 @@
 import os
 from cement.core import backend
 
-config_defaults = backend.defaults('log', 'programs', 'projects')
+# Top-level configurations
+config_defaults = backend.defaults('log', 'projects', 'programs')
 config_defaults['log']['level']  = "INFO"
 config_defaults['log']['file']  = os.path.join(os.getenv("HOME"), "log", "pm.log")
-config_defaults['programs'] = {}
-config_defaults['programs']['gatk'] = {'test':1, 'opt':"my option string"}
+
+# Program configurations
+program_config_defaults = backend.defaults('programs')
+program_config_defaults['gatk'] = {'test':1, 'opt':"my option string"}

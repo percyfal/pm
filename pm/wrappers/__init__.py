@@ -25,6 +25,12 @@ def wrapper_interface_validator(cls, obj):
 # - opts
 # - label
 #
+# What is the order to load? In setup, do
+# _setup_program_config_handler or the like, reading the .pm2 config,
+# overriding the (sensible) config defaults. Then, if a command is
+# passed that uses a project directory, look for appropriately named
+# config file in that directory and override defaults. This must then
+# be done "post-setup" - or in "_pre_dispatch"?
 
 class IWrapper(interface.Interface):
     
@@ -125,9 +131,12 @@ class JavaMixin(object):
         jarfile = None
         """Jar file"""
 
+        config_label = 'java'
+        """Label in configuration dictionary"""
+
         config_defaults = JavaConfigDefaults(opts="oeu")
         """Default java configuration"""
-        print config_defaults
+
         cmd_args = [exe, '-jar', config_defaults["opts"]]
         """Command arguments"""
 
