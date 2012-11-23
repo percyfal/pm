@@ -74,6 +74,7 @@ def setUpModule():
     - runs run_bcbb_pipeline.py -s to install fastq files to production folder
     - runs automated_initial_analysis.py
     """
+    return
     pattern = "14_write_metrics.txt"
     def filter_fn(f):
         return re.search(pattern, f) != None

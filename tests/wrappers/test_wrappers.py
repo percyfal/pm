@@ -3,6 +3,7 @@ import unittest
 
 import pm.wrappers as wrap
 from pm.wrappers.gatk import GATKWrapper
+from pm.core import program
 
 from cement.utils import shell
 
@@ -35,4 +36,8 @@ class TestWrapper(unittest.TestCase):
         """Test GATK"""
         gatk = GATKWrapper()
         print gatk
+        print "name: " + str(gatk.__name__)
 
+    def test_registering_wrapper(self):
+        """Test registering a wrapper"""
+        program.register(GATKWrapper())

@@ -61,7 +61,7 @@ class AdminController(PmAbstractBaseController):
         projects = pd.DataFrame(self.app.config.get_section_dict("projects"))
         print projects.transpose()
 
-    @controller.expose(help="Setup a project. Samples have to be organize as sample/samplerungroup/samplerunid")
+    @controller.expose(help="Setup a project. Samples have to be organized as sample/samplerungroup/samplerunid")
     def setup(self):
         if not self._check_pargs(["project_id"]):
             return

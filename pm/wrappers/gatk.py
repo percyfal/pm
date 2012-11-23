@@ -11,10 +11,8 @@ class GATKWrapper(wrap.BaseWrapper, wrap.JavaMixin):
         """Handler meta-data"""
         interface = wrap.IWrapper
         label = 'gatk'
+        group = 'gatk'
         path = os.getenv("GATK_HOME")
-
-    def version(self):
-        return ""
 
     def cl(self, input_file=None, output_file=None):
         return " ".join(self._meta.cmd_args)

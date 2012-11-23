@@ -8,6 +8,8 @@ def wrapper_interface_validator(cls, obj):
         'cl', 
         'cmd_args',
         'version',
+        'group',
+        'label'
         ]
     interface.validate(IWrapper, obj, members)
 
@@ -15,6 +17,8 @@ class IWrapper(interface.Interface):
     
     class IMeta:
         """Interface meta-data"""
+        group = 'group'
+        """The string identifier for the wrapper group"""
         label = 'wrapper'
         """The string identifier of the interface"""
         validator = wrapper_interface_validator
@@ -70,6 +74,8 @@ class BaseWrapper(handler.CementBaseHandler):
     """
     Base class that all Wrappers should sub-class from.
     """
+    __name__ = "__name__"
+    __module__ = "__module__"
 
     class Meta:
         """Handler meta-data"""
@@ -78,6 +84,10 @@ class BaseWrapper(handler.CementBaseHandler):
         interface = IWrapper
         
         exe = ""
+
+        version = None
+
+        
 
     def __init__(self, *args, **kw):
         super(BaseWrapper, self).__init__(*args, **kw)
@@ -89,7 +99,7 @@ class BaseWrapper(handler.CementBaseHandler):
         return "{}".format(self.__class__)
 
     def version(self):
-        return None
+        return self._meta.version
 
     def cl(self):
         return " ".join(self.cmd_args())
