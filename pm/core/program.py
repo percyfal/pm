@@ -75,9 +75,10 @@ def register(wrapper):
     if defined(wrapper._meta.group, wrapper._meta.label):
         LOG.debug("program name '{}' in group '{}' already defined! ignoring...".format(wrapper._meta.group, wrapper._meta.label))
         return False
-        
-    LOG.debug("registering program name '{}' from {} into programs['{}']['{}']" % \
-                  (wrapper.__name__, wrapper.__module__, wrapper._meta.group, wrapper._meta.label))
+    print dir(wrapper)
+    print dir(wrapper._meta)
+    LOG.debug("registering program name '{}' from {} into programs['{}']['{}']".format(wrapper.__class__, wrapper.__module__, wrapper._meta.group, wrapper._meta.label))
+    LOG.info("registering program name '{}' from {} into programs['{}']['{}']".format(wrapper.__class__, wrapper.__module__, wrapper._meta.group, wrapper._meta.label))
 
     _define(wrapper._meta.group, wrapper._meta.label)
     backend.programs[wrapper._meta.group][wrapper._meta.label] = wrapper

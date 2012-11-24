@@ -7,7 +7,7 @@ from cement.core import interface, handler
 class ConfigDefaults(dict):
     """Represent a config defaults section for wrappers"""
     def __init__(self, **kw):
-        self.opts = kw.get("opts", None) # Program options as a string
+        self["opts"] = kw.get("opts", None) # Program options as a string
         
 
 def wrapper_interface_validator(cls, obj):
@@ -92,20 +92,13 @@ class BaseWrapper(handler.CementBaseHandler):
     """
     Base class that all Wrappers should sub-class from.
     """
-    __name__ = "__name__"
-    __module__ = "__module__"
-
     class Meta:
         """Handler meta-data"""
         label = None
-
         interface = IWrapper
-        
         exe = ""
-
         version = None
-
-        
+        cmd_args = []
 
     def __init__(self, *args, **kw):
         super(BaseWrapper, self).__init__(*args, **kw)
@@ -129,8 +122,8 @@ class JavaConfigDefaults(ConfigDefaults):
     """Configuration defaults for java programs"""
     def __init__(self, **kw):
         super(JavaConfigDefaults, self).__init__(**kw)
-        self.memory = kw.get("memory", "3g")
-        self.opts = kw.get("opts", 'VALIDATION_STRINGENCY=SILENT')
+        self["memory"] = kw.get("memory", "3g")
+        self["opts"] = kw.get("opts", 'VALIDATION_STRINGENCY=SILENT')
 
 class JavaMixin(object):
     """Mixin for java based programs"""
@@ -147,8 +140,17 @@ class JavaMixin(object):
         config_defaults = JavaConfigDefaults(opts="oeu")
         """Default java configuration"""
 
-        cmd_args = [exe, '-jar', config_defaults["opts"]]
+        config = config_defaults
+
+        cmd_args = [exe, '-jar']#, config_defaults["opts"]]
         """Command arguments"""
 
     def __init__(self):
         super(JavaMixin, self).__init__()
+
+    def _setup(self, base_app):
+        self._meta.config = None
+
+    def cmd_args(self):
+        print self._meta.config_defaults
+        return [self._meta.exe, '-jar', self._meta.config_defaults["opts"]]

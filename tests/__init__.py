@@ -58,6 +58,9 @@ index_files = {'sam':{'file':os.path.join(CONFIG, "tool-data", "sam_fa_indices.l
                'bowtie2':{'file':os.path.join(CONFIG, "tool-data", "bowtie2_indices.loc"), 'data':StringIO()},
                'liftOver':{'file':os.path.join(CONFIG, "tool-data", "liftOver.loc"), 'data':StringIO()}
                }
+# Workaround: setup to point to scilife test data
+import scilifelab
+SCILIFETEST=os.path.join(os.path.dirname(scilifelab.__file__), os.pardir, "tests", "full", "data")
 
 # FIX ME: no need for archive or production tests here
 def setUpModule():

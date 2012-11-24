@@ -2,10 +2,12 @@
 import os
 import yaml
 import pandas as pd
-from cement.core import controller
+from cement.core import controller, backend
 from pm.core.controller import PmAbstractBaseController
 from pm.experiment import setup_project
 from pm.lib.utils import update, config_to_dict
+
+LOG = backend.minimal_logger(__name__)
 
 class AdminController(PmAbstractBaseController):
     """
@@ -36,6 +38,9 @@ class AdminController(PmAbstractBaseController):
         if not self._check_pargs(["project_id"]):
             return
         path = os.path.abspath(self.pargs.project_id.rstrip(os.sep))
+        if not os.path.exists(path):
+            self.app.log.warn("No such path {}; skipping".format(path))
+            return
         project_id = os.path.basename(path)
         if self.app.config.has_section("projects", subsection=project_id):
             self.app.log.warn("project id {} already exists".format(project_id))
@@ -57,9 +62,9 @@ class AdminController(PmAbstractBaseController):
 
     @controller.expose(help="List projects")
     def ls(self):
-        #self.app._output_data['stdout'].write(project.transpose())
         projects = pd.DataFrame(self.app.config.get_section_dict("projects"))
-        print projects.transpose()
+        self.app._output_data['stdout'].write("\nAvailable projects\n====================\n\n")
+        self.app._output_data['stdout'].write(str(projects.transpose()))
 
     @controller.expose(help="Setup a project. Samples have to be organized as sample/samplerungroup/samplerunid")
     def setup(self):
@@ -70,17 +75,29 @@ class AdminController(PmAbstractBaseController):
             return
         try:
             samples = setup_project(os.path.join(self.app.config.get("projects", "path", subsection=self.pargs.project_id), self.pargs.data))
-            print pd.Series(config_to_dict(samples))
         except IOError:
             self.app.log.warn("no samples found for {}".format(self.pargs.project_id))
-        # Save sampes to configuration
+        # Save samples to configuration
         sampleconf = os.path.join(self.app.config.get("projects", "path", subsection=self.pargs.project_id), "config", "samples.yaml")
         if not os.path.exists(os.path.dirname(sampleconf)):
             os.mkdir(os.path.dirname(sampleconf))
             config = {}
-        else:
+        # If old config exists
+        if os.path.exists(sampleconf):
             with open(sampleconf) as fh:
                 config = yaml.load(fh)
-            config = update(config, samples)
+            if config:
+                config = update(samples, config)
+            else:
+                print "setting equal"
+                print samples
+                config = samples
+        else:
+            config = samples
+        print "safe dump" + str(yaml.safe_dump(config_to_dict(config), default_flow_style=False, allow_unicode=True, width=1000))
+        if config:
+            LOG.info("Saving sample configuration to {}".format(sampleconf))
+            with open(sampleconf, "w") as fh:
+                fh.write(yaml.safe_dump(config_to_dict(config), default_flow_style=False, allow_unicode=True, width=1000))
 
 

@@ -21,6 +21,8 @@ def config_to_dict(d):
 
     :param d: config handler or ordered dict
     """
+    if d is None:
+        return {}
     if isinstance(d, config.CementConfigHandler):
         d = d._sections
     elif isinstance(d, dict):

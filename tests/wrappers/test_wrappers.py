@@ -2,10 +2,13 @@ import os
 import unittest
 
 import pm.wrappers as wrap
-from pm.wrappers.gatk import GATKWrapper
+from pm.wrappers.gatk import GATKCalculateHsMetricsWrapper
 from pm.core import program
-
+import cStringIO
 from cement.utils import shell
+import subprocess
+
+packet = cStringIO.StringIO()
 
 class LsWrapper(wrap.BaseWrapper):
     class Meta:
@@ -21,6 +24,19 @@ class LsWrapper(wrap.BaseWrapper):
     def cl(self, input_file=""):
         return " ".join(self.cmd_args(input_file))
 
+class DuWrapper(wrap.BaseWrapper):
+    class Meta:
+        interface = wrap.IWrapper
+        exe = "du"
+        cmd_args = [exe]
+        
+    def cmd_args(self, input_file="./"):
+        if input_file:
+            self._meta.cmd_args += [input_file]
+        return self._meta.cmd_args
+
+    def cl(self, input_file=""):
+        return " ".join(self.cmd_args(input_file))
 
 class TestWrapper(unittest.TestCase):
     def test_wrapper(self):
@@ -34,10 +50,20 @@ class TestWrapper(unittest.TestCase):
 
     def test_gatk(self):
         """Test GATK"""
-        gatk = GATKWrapper()
+        gatk = GATKCalculateHsMetricsWrapper()
         print gatk
-        print "name: " + str(gatk.__name__)
+        print "name: " + str(gatk.__class__)
 
     def test_registering_wrapper(self):
         """Test registering a wrapper"""
-        program.register(GATKWrapper())
+        program.register(GATKCalculateHsMetricsWrapper())
+
+    def test_pipeline(self):
+        """Test running a simple pipeline"""
+        ls = LsWrapper()
+        du = DuWrapper()
+        packet.write(ls.cl())
+        packet.write("\n")
+        packet.write(du.cl())
+        print packet.getvalue()
+        print shell.exec_cmd([ls.cl(), "\n", du.cl()])

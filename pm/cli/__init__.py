@@ -5,6 +5,7 @@ from collections import OrderedDict
 from cement.core import foundation, backend
 from pm.core.controller import PmBaseController
 from pm.core.log import PmLogHandler
+from pm.core.output import PmOutputHandler
 from pm.ext import ext_yamlconfigparser
 
 LOG = backend.minimal_logger(__name__)    
@@ -17,6 +18,7 @@ class PmMainApp(foundation.CementApp):
         label = "pm2"
         base_controller = PmBaseController
         log_handler = PmLogHandler
+        output_handler = PmOutputHandler
         project_config = os.path.join(os.getenv("HOME"), ".pm2", "projects.yaml")
         ## Add command handler here
         config_handler = ext_yamlconfigparser.YAMLParserConfigHandler
