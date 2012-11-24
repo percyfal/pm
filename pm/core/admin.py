@@ -94,7 +94,6 @@ class AdminController(PmAbstractBaseController):
                 config = samples
         else:
             config = samples
-        print "safe dump" + str(yaml.safe_dump(config_to_dict(config), default_flow_style=False, allow_unicode=True, width=1000))
         if config:
             LOG.info("Saving sample configuration to {}".format(sampleconf))
             with open(sampleconf, "w") as fh:

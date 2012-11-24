@@ -64,6 +64,8 @@ def setup_project(path):
             continue
         if proot == os.curdir:
             continue
+        if proot in PROTECTED:
+            continue
         if depth == 1:
             samples[proot] = {k:SampleRun(**{'id':k}) for k in dirs}
     return samples
