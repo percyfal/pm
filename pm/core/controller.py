@@ -5,20 +5,6 @@ import re
 
 from cement.core import interface, handler, controller, backend
 
-
-# See paver.tasks.needs
-# Will this even work? No way to get function name 
-def requires(*args):
-    """Specifies arguments which this task needs to run"""
-    print args
-    def entangle(func):
-        req = args
-        print dir(func)
-        print func.label
-        print func.func_dict
-        print func.__class__
-    return entangle
-
 class PmBaseController(controller.CementBaseController):
     """
     This is the pm base controller.
@@ -40,7 +26,6 @@ class PmBaseController(controller.CementBaseController):
     def default(self):
         print self._help_text
 
-    #@requires("function")
     @controller.expose()
     def config(self):
         print "Config"
@@ -63,6 +48,16 @@ class PmAbstractBaseController(controller.CementBaseController):
                 self.app.log.warn("Required argument '{}' lacking".format(p))
                 return False
         return True
+
+    def _check_project(self):
+        """Check that the required project exists in project config"""
+        if not self._check_pargs(["project_id"]):
+            return False
+        if not self.app.config.has_section("projects", subsection=self.pargs.project_id):
+            self.app.log.warn("No such project {}".format(self.pargs.project_id))
+            return False
+        return True
+
 
 class PmAbstractExtendedBaseController(PmAbstractBaseController):
     """

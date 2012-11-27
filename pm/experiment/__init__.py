@@ -4,23 +4,26 @@ Basic organization of experimental units. A project is structured as
 
 PROJECTID/data/SAMPLE/SAMPLERUNGROUP/
 
-In the SAMPLERUNGROUP folder
+This is mapped to the sample structure 
 
-A project configuration consists of a dictionary with (at least) the following hierarchy 
+sample:
+  sample_run_group:
+    sample_run:
+      id:
+      analyses:
+        - id:
+          type:
+          label:
+          files:
 
-{ 'metadata': dict(project_name, path, sampledir, resultdir),
-  'samples' : dict()}
-
-where a sample consists of several sample runs
-
-{ 'sampleruns' : dict() }
-
-and a sample run of
-
+As a consequence, each analysis type will need a specific representation/object.
 """
 import os
 import json
 import yaml
+from cement.core import backend
+
+LOG = backend.minimal_logger(__name__)
 
 # FIX ME: use config setting
 # These names may not be used to name a sample
@@ -45,17 +48,26 @@ class Project(BaseDict):
         BaseDict.__init__(self, **kw)
         
 class Sample(BaseDict):
-    _dict_fields = ["sample_run"]
     def __init__(self, **kw):
         BaseDict.__init__(self, **kw)
 
+class SampleRunGroup(BaseDict):
+    def __init__(self, **kw):
+        BaseDict.__init__(self, **kw)
+    
 class SampleRun(BaseDict):
     _fields = ["id"]
-    _dict_fields = ["results", "tables"]
+    _list_fields = ["analysis"]
+    def __init__(self, **kw):
+        BaseDict.__init__(self, **kw)
+
+class Analysis(BaseDict):
+    _fields = ["id", "type", "label", "files", "status"]
     def __init__(self, **kw):
         BaseDict.__init__(self, **kw)
 
 def setup_project(path):
+    """Setup project collecting samples from a path"""
     samples = {}
     for root, dirs, files in os.walk(path):
         proot = os.path.relpath(root, path)
@@ -67,5 +79,8 @@ def setup_project(path):
         if proot in PROTECTED:
             continue
         if depth == 1:
-            samples[proot] = {k:SampleRun(**{'id':k}) for k in dirs}
+            LOG.debug("Tree depth=1; assuming sample level")
+            samples[proot] = {k:SampleRunGroup() for k in dirs}
+        else:
+            LOG.debug("Tree depth=2; assuming sample run group level")
     return samples

@@ -4,6 +4,20 @@ import os
 from cement.core import interface, handler
 
 
+
+# See paver.tasks.needs
+# Will this even work? No way to get function name 
+def requires(*args):
+    """Specifies arguments which this task needs to run"""
+    print args
+    def entangle(func):
+        req = args
+        print dir(func)
+        print func.label
+        print func.func_dict
+        print func.__class__
+    return entangle
+
 class ConfigDefaults(dict):
     """Represent a config defaults section for wrappers"""
     def __init__(self, **kw):
