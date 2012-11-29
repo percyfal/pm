@@ -3,15 +3,18 @@ from cement.core import backend, handler, output
 from cement.utils import test, shell
 from pm.cli import PmMainApp
 
-import scilifelab
-SCILIFETEST=os.path.join(os.path.dirname(scilifelab.__file__), os.pardir, "tests", "full", "data")
-
 LOG = backend.minimal_logger(__name__)
 
 config_defaults = backend.defaults('config', 'projects','log', 'bcbio')
 config_defaults['log']['level']  = "INFO"
 config_defaults['log']['file']  = os.path.join(os.curdir, "log", "pm.log")
-config_defaults['projects']['J.Doe_00_01'] = {'alias':"null", 'path':os.path.join(SCILIFETEST, "production", "J.Doe_00_01")}
+# This should really be setup by test init script
+config_defaults['projects']['J.Doe_00_01'] = {'alias':"null", 'path':os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "tests", "data", "projects", "J.Doe_00_01")}
+config_defaults['projects']['J.Doe_00_02'] = {'alias':"null", 'path':os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "tests", "data", "projects", "J.Doe_00_02")}
+config_defaults['projects']['J.Doe_00_03'] = {'alias':"null", 'path':os.path.join(os.path.dirname(__file__), os.pardir, os.pardir, "tests", "data", "projects", "J.Doe_00_03")}
+# Project and sample default configuration files
+config_defaults['config']['project'] = os.path.join(os.getenv("HOME"), ".pm2", "projects.yaml")
+config_defaults['config']['sample'] = os.path.join("config", "samples.yaml")
 
 ## Output handler for tests
 class PmTestOutputHandler(output.CementOutputHandler):

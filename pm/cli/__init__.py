@@ -51,7 +51,7 @@ class PmMainApp(foundation.CementApp):
         # Hooks
         hook.define('post_setup_samples')
 
-    def _setup_project_config():
+    def _setup_project_config(self):
         project_config = self.config.get("config", "project")
         sample_config = self.config.get("config", "sample")
 

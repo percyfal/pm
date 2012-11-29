@@ -5,7 +5,6 @@ Three configuration files for pm are accepted:
 
 1. pm.yaml
 2. project.yaml
-3. program.yaml
 
 """
 import os
@@ -19,13 +18,14 @@ from cement.core import handler, backend
 
 LOG = backend.minimal_logger(__name__)
 
-# FIX ME: separate module
-from . import SCILIFETEST
-
 def setUpModule():
-    with open(os.path.join(SCILIFETEST, "config", "project_summary.yaml")) as fh:
+    with open(os.path.join(os.path.dirname(__file__), "data", "config", "project_summary.yaml")) as fh:
         project_config = yaml.load(fh)
 
+# class ConfigFunctionTest(unittest.TestCase):
+#     def test_
+
+# Tests run on application
 class ConfigTest(test.PmTest):
     def test_configuration(self):
         """Test reading pm and project configuration files"""
@@ -41,13 +41,12 @@ class ConfigTest(test.PmTest):
 
     def test_sample_setup(self):
         """Test setting up a project"""
-        self.app = self.make_app(argv = ["admin", "setup", "J.Doe_00_01"])
+        self.app = self.make_app(argv = ["admin", "setup", "J.Doe_00_01", "--data", ""])
         LOG.info("Loading admin controller")
         handler.register(AdminController)
         self._run_app()
-        samples_conf = os.path.join(SCILIFETEST, "production", "J.Doe_00_01", "config", "samples.yaml")
+        samples_conf = os.path.join(os.path.dirname(__file__), "data", "projects", "J.Doe_00_01", "config", "samples.yaml")
         with open(samples_conf) as fh:
             samples = yaml.load(fh)
-        # NOTE: this is going to change 
-        self.assertEqual(samples, {'P001_101_index3': {'120924_AC003CCCXX': {'tables': {}, 'id': '120924_AC003CCCXX', 'results': {}}, '121015_BB002BBBXX': {'tables': {}, 'id': '121015_BB002BBBXX', 'results': {}}}, 'P001_102_index6': {'120924_AC003CCCXX': {'tables': {}, 'id': '120924_AC003CCCXX', 'results': {}}}})
+        self.assertEqual(samples, {'P001_101_index3': {'120924_AC003CCCXX': {}, '121015_BB002BBBXX': {}}, 'P001_102_index6': {'120924_AC003CCCXX': {}}})
         os.unlink(samples_conf)
