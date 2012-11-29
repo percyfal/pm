@@ -21,7 +21,7 @@ class PmMainApp(foundation.CementApp):
         log_handler = PmLogHandler
         output_handler = PmOutputHandler
         project_config = os.path.join(os.getenv("HOME"), ".pm2", "projects.yaml")
-        sample_config_dir = os.path.join("config", "samples.yaml")
+        sample_config = os.path.join("config", "samples.yaml")
         ## Add command handler here
         config_handler = ext_yamlconfigparser.YAMLParserConfigHandler
         # Setting up projects
@@ -41,6 +41,8 @@ class PmMainApp(foundation.CementApp):
         super(PmMainApp, self).setup()
         # Setup command handler here
         self._setup_program_config()
+        # Setup project and sample configuration files
+        self._setup_project_config()
         # Setup output data handling here
         self._output_data = dict(stdout = StringIO(),
                                  stderr = StringIO(),
@@ -48,6 +50,10 @@ class PmMainApp(foundation.CementApp):
 
         # Hooks
         hook.define('post_setup_samples')
+
+    def _setup_project_config():
+        project_config = self.config.get("config", "project")
+        sample_config = self.config.get("config", "sample")
 
     def _setup_program_config(self):
         # FIX ME: should use function similar to _resolve_config_handler to setup

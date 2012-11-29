@@ -16,7 +16,7 @@ def collect_results(prjdir, sample):
 
 def _get_samples(app, project_id):
     """Get samples for a project"""
-    path = os.path.abspath(pjoin(app.config.get("projects", "path", project_id), app._meta.sample_config_dir))
+    path = os.path.abspath(pjoin(app.config.get("projects", "path", project_id), app._meta.sample_config))
     if not os.path.exists(path):
         LOG.warn("No sample configuration found for project {}; skipping".format(project_id))
         return
@@ -100,7 +100,7 @@ class AdminController(PmAbstractBaseController):
         except IOError:
             self.app.log.warn("no samples found for '{}'".format(self.pargs.project_id))
         # Save samples to configuration
-        sampleconf = pjoin(self.app.config.get("projects", "path", subsection=self.pargs.project_id), self.app._meta.sample_config_dir)
+        sampleconf = pjoin(self.app.config.get("projects", "path", subsection=self.pargs.project_id), self.app._meta.sample_config)
         if not os.path.exists(os.path.dirname(sampleconf)):
             os.mkdir(os.path.dirname(sampleconf))
             config = {}
