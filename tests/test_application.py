@@ -2,7 +2,8 @@
 import unittest
 from pm.utils import test
 from utils.classes import BASEDIR
-from . import SCILIFETEST
+from pm.cli.admin import AdminController
+from cement.core import handler
 
 class ApplicationTest(test.PmTest):
     def test_application(self):
@@ -15,5 +16,6 @@ class AdminTest(test.PmTest):
     def test_admin(self):
         """Test administration command"""
         self.app = self.make_app(argv=["admin"])
+        handler.register(AdminController)
         res = self._run_app()
         print res
