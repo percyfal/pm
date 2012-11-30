@@ -4,8 +4,8 @@ import sys
 from cement.core import foundation, handler, backend
 from pm.core.config import config_defaults
 from pm.cli import PmMainApp
-from pm.core.controller import PmBaseController
-from pm.core.admin import AdminController
+from pm.cli.controller import PmBaseController
+from pm.cli.admin import AdminController
 #from pm.core.output import PmOutputHandler
 
 CONFIGFILE=os.path.join(os.getenv("HOME"), ".pm2", "pm.yaml")

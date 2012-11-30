@@ -1,7 +1,7 @@
 """test configuration setting and getting"""
 from cement.core import backend
 from ..classes import PmTest
-from pm.core.controller import PmBaseController
+from pm.cli.controller import PmBaseController
 
 
 class ControllerTest(PmTest):

@@ -13,7 +13,7 @@ import yaml
 from pm.utils import test
 from mock import Mock
 from pm.lib.utils import config_to_dict
-from pm.core.admin import AdminController
+from pm.cli.admin import AdminController
 from cement.core import handler, backend
 
 LOG = backend.minimal_logger(__name__)

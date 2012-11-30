@@ -4,7 +4,7 @@ import yaml
 import pandas as pd
 from os.path import join as pjoin
 from cement.core import controller, backend, hook
-from pm.core.controller import PmAbstractBaseController
+from pm.cli.controller import PmAbstractBaseController
 from pm.lib.utils import update, config_to_dict
 from pm.experiment import setup_project
 
