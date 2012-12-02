@@ -48,5 +48,5 @@ class ConfigTest(test.PmTest):
         samples_conf = os.path.join(os.path.dirname(__file__), "data", "projects", "J.Doe_00_01", "config", "samples.yaml")
         with open(samples_conf) as fh:
             samples = yaml.load(fh)
-        self.assertEqual(samples, {'P001_101_index3': {'120924_AC003CCCXX': {}, '121015_BB002BBBXX': {}}, 'P001_102_index6': {'120924_AC003CCCXX': {}}})
+        self.assertEqual(samples, {'P001_101_index3': {}, 'P001_102_index6': {}})
         os.unlink(samples_conf)

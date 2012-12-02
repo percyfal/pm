@@ -6,7 +6,7 @@ from os.path import join as pjoin
 from cement.core import controller, backend, hook
 from pm.cli.controller import PmAbstractBaseController
 from pm.lib.utils import update, config_to_dict
-from pm.experiment import setup_project
+from pm.experiment import setup_project, Sample
 
 LOG = backend.minimal_logger(__name__)
 
@@ -21,7 +21,7 @@ def _get_samples(app, project_id):
         LOG.warn("No sample configuration found for project {}; skipping".format(project_id))
         return
     with open(path) as fh:
-        samples = yaml.load(fh)
+        samples = {k:Sample(**v) for k, v in yaml.load(fh).iteritems()}
     return samples
 
 class AdminController(PmAbstractBaseController):
