@@ -120,13 +120,13 @@ class AdminController(PmAbstractBaseController):
             with open(sampleconf, "w") as fh:
                 fh.write(yaml.safe_dump(config_to_dict(config), default_flow_style=False, allow_unicode=True, width=1000))
 
-    @controller.expose(help="Collect results for a project. Writes results to object store. This function exists for external pipelines to kook in to.")
+    @controller.expose(help="Collect results for a project. Writes results to object store. This function exists for external pipelines to look in to.")
     def collect_results(self):
-        if not self._check_pargs(["project_id"]):
+        if not self._check_project():
             return
         prjdir = os.path.join(self.app.config.get("projects", "path", subsection=self.pargs.project_id))
         samples = {}
-        sampleconf = os.path.join(prjdir, "config", "samples.yaml")
+        sampleconf = pjoin(prjdir, self.app._meta.sample_config)
         if os.path.exists(sampleconf):
             LOG.info("loading samples from {}".format(sampleconf))
             with open(sampleconf) as fh:

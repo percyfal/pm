@@ -29,7 +29,6 @@ class PmBaseController(controller.CementBaseController):
     @controller.expose()
     def config(self):
         print "Config"
-        
 
 class PmAbstractBaseController(controller.CementBaseController):
     """ This is the pm abstract base controller. The controller allows
@@ -39,6 +38,7 @@ class PmAbstractBaseController(controller.CementBaseController):
     """
     class Meta:
         label = 'abstract-base'
+        # Add common arguments here
 
     # FIX ME: would want this to be a decorator
     def _check_pargs(self, pargs, msg=None):

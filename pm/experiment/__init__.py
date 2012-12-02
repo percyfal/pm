@@ -50,7 +50,7 @@ class Project(BaseDict):
 class Sample(BaseDict):
     def __init__(self, **kw):
         BaseDict.__init__(self, **kw)
-
+    
 class SampleRunGroup(BaseDict):
     def __init__(self, **kw):
         BaseDict.__init__(self, **kw)

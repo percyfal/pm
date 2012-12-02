@@ -19,3 +19,4 @@ class AdminTest(test.PmTest):
         handler.register(AdminController)
         res = self._run_app()
         print res
+

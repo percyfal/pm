@@ -9,6 +9,14 @@ METRICS_TYPES=['align', 'hs', 'dup', 'insert']
 def _raw(x):
     return (x, None)
 
+def _convert_input(x):
+    if re.match("^[0-9]+$", x):
+        return int(x)
+    elif re.match("^[0-9,.]+$", x):
+        return float(x.replace(",", "."))
+    else:
+        return str(x)
+
 def _read_picard_metrics(f):
     with open(f) as fh:
         data = fh.readlines()
@@ -18,11 +26,11 @@ def _read_picard_metrics(f):
             i = len(data)
         else:
             i = i_hist
-        tmp = [x.rstrip("\n").split("\t") for x in data[0:i] if not re.match("^[ #\n]", x)]
+        tmp = [[_convert_input(y) for y in x.rstrip("\n").split("\t")] for x in data[0:i] if not re.match("^[ #\n]", x)]
         metrics = pd.DataFrame(tmp[1:], columns=tmp[0])
         if i_hist == -1:
             return (metrics, None)
-        tmp = [x.rstrip("\n").split("\t") for x in data[i_hist:len(data)] if not re.match("^[ #\n]", x)]
+        tmp = [[_convert_input(y) for y in x.rstrip("\n").split("\t")] for x in data[i_hist:len(data)] if not re.match("^[ #\n]", x)]
         hist = pd.DataFrame(tmp[1:], columns=tmp[0])
     return (metrics, hist)
 
