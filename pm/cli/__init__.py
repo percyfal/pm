@@ -29,6 +29,9 @@ class PmMainApp(foundation.CementApp):
         samples_collection_function = f
         # For collecting results
         results_collection_handler = pm.core.admin.collect_results
+        # Document generation
+        sphinx_report_function = None
+
         # Store file
         store_file = "store.hd5"
 

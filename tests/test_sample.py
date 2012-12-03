@@ -49,3 +49,6 @@ class SampleTest(unittest.TestCase):
     def test_save_samples(self):
         """Test saving samples"""
         save_samples("samples2.yaml", samples)
+        with open("samples2.yaml") as fh:
+            sample_conf = yaml.load(fh)
+        self.assertEqual(sample_conf, samples)

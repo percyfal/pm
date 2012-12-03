@@ -23,6 +23,7 @@ collect the sample runs themselves.
 import os
 import json
 import yaml
+from pm.lib.utils import config_to_dict
 from cement.core import backend
 from collections import Iterator
 
@@ -88,7 +89,7 @@ def save_samples(sample_conf, samples):
     """Save samples to a yaml configuration file.
     """
     with open(sample_conf, "w") as fh:
-        fh.write(yaml.dump(sample_conf))
+        fh.write(yaml.safe_dump(config_to_dict(samples), default_flow_style=False, allow_unicode=True, width=1000))
 
 def load_samples(sample_conf):
     """Load samples from a yaml configuration file.

@@ -2,6 +2,7 @@
 import os
 import yaml
 import pandas as pd
+from pandas.io.pytables import HDFStore
 from os.path import join as pjoin
 from cement.core import controller, backend, hook
 from pm.cli.controller import PmAbstractBaseController
@@ -21,8 +22,6 @@ def _get_samples(app, project_id):
         LOG.warn("No sample configuration found for project {}; skipping".format(project_id))
         return
     samples = load_samples(path)
-    # with open(path) as fh:
-    #     samples = {k:Sample(**v) for k, v in yaml.load(fh).iteritems()}
     return samples
 
 class AdminController(PmAbstractBaseController):
@@ -78,7 +77,7 @@ class AdminController(PmAbstractBaseController):
     def ls(self):
         if self.pargs.project_id:
             samples = _get_samples(self.app, self.pargs.project_id)
-            samples = pd.DataFrame(samples)
+            samples = pd.DataFrame(config_to_dict(samples))
             self.app._output_data['stdout'].write("\nSamples for project {}\n======================================\n\n".format(self.pargs.project_id))
             self.app._output_data['stdout'].write(str(samples.transpose().stack()))
         else:
@@ -121,7 +120,7 @@ class AdminController(PmAbstractBaseController):
             with open(sampleconf, "w") as fh:
                 fh.write(yaml.safe_dump(config_to_dict(config), default_flow_style=False, allow_unicode=True, width=1000))
 
-    @controller.expose(help="Collect results for a project. Writes results to object store. This function exists for external pipelines to look in to.")
+    @controller.expose(help="Collect results for a project. Writes results to object store. This function exists for external pipelines to hook in to.")
     def collect_results(self):
         if not self._check_project():
             return
@@ -133,5 +132,30 @@ class AdminController(PmAbstractBaseController):
             with open(sampleconf) as fh:
                 samples = yaml.load(fh)
         # Process samples and add results according to function admin.collection
+        results = {}
         for s in samples.iteritems():
-            self.app._meta.results_collection_handler(prjdir, s)
+            (sample_id, sample_obj) = s
+            results[sample_id] = self.app._meta.results_collection_handler(prjdir, s)
+
+        store = HDFStore(os.path.join(prjdir, self.app._meta.store_file))
+        for sample_id, sample_run_results in results.iteritems():
+            for sample_run_id, res_list in sample_run_results.iteritems():
+                cnt = 0
+                for res in res_list:
+                    if not res['metrics'] is None:
+                        if isinstance(res['metrics'], str):
+                            continue
+                        # Need pandas object for storage
+                        key = "{}_{}_{}_metrics_{}".format(sample_id, sample_run_id, res['type'].replace(".", ""), cnt)
+                        LOG.debug("Storing '{}' object in store in key '{}'".format(res['type'], key))
+                        store[key] =  res['metrics']
+                    if 'hist' in res:
+                        if res['hist'] is None:
+                            continue
+                        if isinstance(res['hist'], str):
+                            continue
+                        # Need pandas object for storage
+                        key = "{}_{}_{}_hist_{}".format(sample_id, sample_run_id, res['type'].replace(".", ""), cnt)
+                        LOG.debug("Storing '{}' object in store in key '{}'".format(res['type'], key))
+                        store[key] =  res['hist']
+                    cnt = cnt + 1
