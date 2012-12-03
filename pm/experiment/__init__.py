@@ -87,7 +87,8 @@ class Analysis(BaseDict):
 def save_samples(sample_conf, samples):
     """Save samples to a yaml configuration file.
     """
-    pass
+    with open(sample_conf, "w") as fh:
+        fh.write(yaml.dump(sample_conf))
 
 def load_samples(sample_conf):
     """Load samples from a yaml configuration file.
