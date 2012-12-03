@@ -1,6 +1,6 @@
 """pm experiment module
 
-Basic organization of experimental units. A project is structured as 
+Basic organization of *experimental* units. A project is structured as 
 
 PROJECTID/data/SAMPLE/SAMPLERUNGROUP/
 
@@ -9,14 +9,16 @@ This is mapped to the sample structure
 sample:
   sample_run:
     id:
-    sample_run_group:
+    group:
     analyses:
       - id:
         type:
         label:
         files:
 
-As a consequence, each analysis type will need a specific representation/object.
+As a consequence, each analysis type will need a specific representation/object. Note that 
+this representation does not store metadata *about* samples, it only serves to 
+collect the sample runs themselves.
 """
 import os
 import json
@@ -52,24 +54,44 @@ class Project(BaseDict):
     def __init__(self, **kw):
         BaseDict.__init__(self, **kw)
 
-class Sample(BaseDict):
+class SampleCollection(dict):
+    """Base sample collection.
+
+    """
+    def __iter__(self, **kw):
+        return iter([Sample(**x) for x in self.values()])
+
+class Sample(dict):
     """Base Sample class. 
 
-    A Sample consists of several sample runs.
+    A Sample consists of several sample runs. A Sample also 
+    contains meta-information, such as treatment level
+    and grouping level.
     """
     def __init__(self, **kw):
-        BaseDict.__init__(self, **kw)
+        super(Sample, self).__init__( **kw)
+    def __iter__(self, **kw):
+        return iter([SampleRun(**x) for x in self.values()])
 
 class SampleRun(BaseDict):
     _fields = ["id", "group"]
     _list_fields = ["analysis"]
     def __init__(self, **kw):
         BaseDict.__init__(self, **kw)
+    def __iter__(self):
+        print "getting iterator"
+        print self["analysis"].values()
+        return iter([Analysis(**x) for x in self["analysis"].values()])
 
 class Analysis(BaseDict):
     _fields = ["id", "type", "label", "files", "status"]
     def __init__(self, **kw):
         BaseDict.__init__(self, **kw)
+
+def save_samples(sample_conf, samples):
+    """Save samples to a yaml configuration file.
+    """
+    pass
 
 def load_samples(sample_conf):
     """Load samples from a yaml configuration file.
@@ -83,7 +105,7 @@ def load_samples(sample_conf):
 def setup_project(path):
     """Setup project collecting samples from a path"""
     # This should be a simple sample collection that iterates over samples
-    samples = {}
+    samples = SampleCollection()
     for root, dirs, files in os.walk(path):
         proot = os.path.relpath(root, path)
         depth = len(proot.split(os.sep))
@@ -92,6 +114,7 @@ def setup_project(path):
         if proot == os.curdir:
             continue
         if proot in PROTECTED:
+            LOG.debug("skipping namespace-protected directory {}".format(proot))
             continue
         if depth == 1:
             LOG.debug("Tree depth=1; assuming sample level")
