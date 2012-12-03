@@ -10,7 +10,7 @@ sample:
   sample_run:
     id:
     group:
-    analyses:
+    analysis:
       - id:
         type:
         label:
@@ -64,9 +64,7 @@ class SampleCollection(dict):
 class Sample(dict):
     """Base Sample class. 
 
-    A Sample consists of several sample runs. A Sample also 
-    contains meta-information, such as treatment level
-    and grouping level.
+    A Sample consists of several sample runs. 
     """
     def __init__(self, **kw):
         super(Sample, self).__init__( **kw)
@@ -79,9 +77,7 @@ class SampleRun(BaseDict):
     def __init__(self, **kw):
         BaseDict.__init__(self, **kw)
     def __iter__(self):
-        print "getting iterator"
-        print self["analysis"].values()
-        return iter([Analysis(**x) for x in self["analysis"].values()])
+        return iter([Analysis(**x) for x in self["analysis"]])
 
 class Analysis(BaseDict):
     _fields = ["id", "type", "label", "files", "status"]
@@ -99,8 +95,7 @@ def load_samples(sample_conf):
     """
     with open(sample_conf) as fh:
         samples_d = yaml.load(fh)
-    samples = {k:Sample(**v) for k,v in samples_d.iteritems()}
-    return samples
+    return SampleCollection(**samples_d)
 
 def setup_project(path):
     """Setup project collecting samples from a path"""
