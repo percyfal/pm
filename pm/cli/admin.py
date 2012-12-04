@@ -137,25 +137,32 @@ class AdminController(PmAbstractBaseController):
             (sample_id, sample_obj) = s
             results[sample_id] = self.app._meta.results_collection_handler(prjdir, s)
 
-        store = HDFStore(os.path.join(prjdir, self.app._meta.store_file))
-        for sample_id, sample_run_results in results.iteritems():
-            for sample_run_id, res_list in sample_run_results.iteritems():
-                cnt = 0
-                for res in res_list:
-                    if not res['metrics'] is None:
-                        if isinstance(res['metrics'], str):
-                            continue
-                        # Need pandas object for storage
-                        key = "{}_{}_{}_metrics_{}".format(sample_id, sample_run_id, res['type'].replace(".", ""), cnt)
-                        LOG.debug("Storing '{}' object in store in key '{}'".format(res['type'], key))
-                        store[key] =  res['metrics']
-                    if 'hist' in res:
-                        if res['hist'] is None:
-                            continue
-                        if isinstance(res['hist'], str):
-                            continue
-                        # Need pandas object for storage
-                        key = "{}_{}_{}_hist_{}".format(sample_id, sample_run_id, res['type'].replace(".", ""), cnt)
-                        LOG.debug("Storing '{}' object in store in key '{}'".format(res['type'], key))
-                        store[key] =  res['hist']
-                    cnt = cnt + 1
+        # Merge data frames 
+        
+
+        # Do something with results
+        # save_results()
+
+        # Move this to experiments.results
+        # store = HDFStore(os.path.join(prjdir, self.app._meta.store_file))
+        # for sample_id, sample_run_results in results.iteritems():
+        #     for sample_run_id, res_list in sample_run_results.iteritems():
+        #         cnt = 0
+        #         for res in res_list:
+        #             if not res['metrics'] is None:
+        #                 if isinstance(res['metrics'], str):
+        #                     continue
+        #                 # Need pandas object for storage
+        #                 key = "{}_{}_{}_metrics_{}".format(sample_id, sample_run_id, res['type'].replace(".", ""), cnt)
+        #                 LOG.debug("Storing '{}' object in store in key '{}'".format(res['type'], key))
+        #                 store[key] =  res['metrics']
+        #             if 'hist' in res:
+        #                 if res['hist'] is None:
+        #                     continue
+        #                 if isinstance(res['hist'], str):
+        #                     continue
+        #                 # Need pandas object for storage
+        #                 key = "{}_{}_{}_hist_{}".format(sample_id, sample_run_id, res['type'].replace(".", ""), cnt)
+        #                 LOG.debug("Storing '{}' object in store in key '{}'".format(res['type'], key))
+        #                 store[key] =  res['hist']
+        #             cnt = cnt + 1
