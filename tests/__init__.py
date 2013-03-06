@@ -39,7 +39,7 @@ def _check_requirements():
 
 def _setup_illumina_data(datadir):
     prjdir = os.path.join(datadir, "projects")
-    outdir = os.path.join(os.path.abspath(os.curdir), "data", "projects")
+    outdir = os.path.join(os.path.dirname(__file__), "data", "projects")
     for root, dirs, files in os.walk(prjdir):
         proot = os.path.relpath(root, prjdir)
         if len(proot.split(os.sep)) <= 2:
