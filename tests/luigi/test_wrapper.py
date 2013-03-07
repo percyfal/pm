@@ -4,6 +4,8 @@ import luigi
 import time
 import cStringIO
 import pm.wrappers as wrap
+import pm.luigi.bwa as BWA
+import pm.luigi.samtools as SAM
 from cement.utils import shell
 import subprocess
 import ngstestdata as ntd
@@ -14,43 +16,21 @@ bwa = "bwa"
 bwaref = os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "bwa", "chr11.fa")
 bwaseqref = os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "seq", "chr11.fa")
 samtools = "samtools"
+indir = os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "J.Doe_00_01", "P001_101_index3", "121015_BB002BBBXX")
+sample = "P001_101_index3_TGACCA_L001"
+fastq1 = os.path.join(indir, sample + "_R1_001.fastq.gz")
+fastq2 = os.path.join(indir, sample + "_R2_001.fastq.gz")
+sam = os.path.join(indir, sample + ".sam")
 
-class LuigiTaskLsWrapper(luigi.Task):
-    out = None
+class TestLuigiWrappers(unittest.TestCase):
+    def test_bwaaln(self):
+        luigi.run(['--local-scheduler', '--fastq', fastq1, '--bwaref', bwaref, '--outpath', os.path.dirname(__file__)], main_task_cls=BWA.BwaAln)
 
-    def output(self):
-        return shell.exec_cmd(['ls', './'])[0]
+    def test_bwasampe(self):
+        luigi.run(['--local-scheduler', '--fastq1', fastq1, '--fastq2', fastq2, '--bwaref', bwaref, '--outpath', os.path.dirname(__file__)], main_task_cls=BWA.BwaSampe)
 
-    def run(self):
-        self.out = shell.exec_cmd(['ls', './'])
-        print "\n'{}'".format("\n".join([self.out[0]]))
-
-class LuigiTaskPrintWrapper(luigi.Task):
-    out = None
-    def requires(self):
-        return LuigiTaskLsWrapper()
-
-    def run(self):
-        print str(self.input())
-        #self.out = shell.exec_cmd(['ls', '-l', ''])
-        
-class LuigiExternalTaskFastq(luigi.ExternalTask):
-    filename = luigi.Parameter()
-    
-    def run(self):
-        shell.exec_cmd(['touch', self.filename])
-    
-    def output(self):
-        return luigi.LocalTarget(self.filename)
-
-
-
-
-
-
-
-
-
+    def test_samtobam(self):
+        luigi.run(['--local-scheduler', '--sam', sam], main_task_cls=SAM.SamToBam)
 
 class LuigiExternalTaskFastqFile(luigi.ExternalTask):
     fastq = luigi.Parameter(default=None)
@@ -99,9 +79,8 @@ class LuigiTaskSamToBam(luigi.Task):
         return luigi.LocalTarget(os.path.join(os.path.dirname(__file__), os.path.basename(self.fastq1.replace(".fastq.gz", ".bam"))))
 
     def run(self):
-        cl = [samtools, "view", "-bhS", self.input()[0].fn, "-o", self.output().fn]
+        cl = [samtools, "view", "-bhS", self.input()[0].fn, ">", self.output().fn]
         out = shell.exec_cmd(" ".join(cl), shell=True)
-
 
 class LuigiTaskRunSample(luigi.Task):
     sample = luigi.Parameter(default=None)
@@ -136,7 +115,7 @@ class LuigiTestWrapper(unittest.TestCase):
         """Test running a pipeline based on sample name, input directory and output directory"""
         indir = os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "J.Doe_00_01", "P001_101_index3", "121015_BB002BBBXX")
         luigi.run(['--local-scheduler', '--sample', "P001_101_index3_TGACCA_L001", '--indir', indir], main_task_cls=LuigiTaskRunSample)
-        luigi.run(['--local-scheduler', '-h'], main_task_cls=LuigiTaskRunSample)
+        #luigi.run(['--local-scheduler', '-h'], main_task_cls=LuigiTaskRunSample)
 
 
 
