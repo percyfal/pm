@@ -6,6 +6,7 @@ import cStringIO
 import pm.wrappers as wrap
 import pm.luigi.bwa as BWA
 import pm.luigi.samtools as SAM
+import pm.luigi.fastq as FASTQ
 from cement.utils import shell
 import subprocess
 import ngstestdata as ntd
@@ -20,16 +21,39 @@ indir = os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "
 sample = "P001_101_index3_TGACCA_L001"
 fastq1 = os.path.join(indir, sample + "_R1_001.fastq.gz")
 fastq2 = os.path.join(indir, sample + "_R2_001.fastq.gz")
-sam = os.path.join(indir, sample + ".sam")
+sai1 = os.path.join(sample + "_R1_001.sai")
+sai2 = os.path.join(sample + "_R2_001.sai")
+sam = os.path.join(sample + ".sam")
+bam = os.path.join(sample + ".bam")
 
 class TestLuigiWrappers(unittest.TestCase):
+    def test_fastqln(self):
+        luigi.run(['--local-scheduler', '--fastq', fastq1], main_task_cls=FASTQ.FastqFileLink)
+
     def test_bwaaln(self):
-        luigi.run(['--local-scheduler', '--fastq', fastq1, '--bwaref', bwaref, '--outpath', os.path.dirname(__file__)], main_task_cls=BWA.BwaAln)
+        luigi.run(['--local-scheduler', '--fastq', fastq1, '--bwaref', bwaref, '--indir', indir], main_task_cls=BWA.BwaAln)
+        luigi.run(['--local-scheduler', '--fastq', fastq1, '--bwaref', bwaref, '--indir', indir], main_task_cls=BWA.BwaAln)
 
     def test_bwasampe(self):
-        luigi.run(['--local-scheduler', '--fastq1', fastq1, '--fastq2', fastq2, '--bwaref', bwaref, '--outpath', os.path.dirname(__file__)], main_task_cls=BWA.BwaSampe)
+        if os.path.exists(sam):
+            os.unlink(sam)
+        luigi.run(['--local-scheduler', '--sai1', sai1, '--sai2', sai2, '--indir', indir, '--bwaref', bwaref], main_task_cls=BWA.BwaSampe)
 
     def test_samtobam(self):
+        luigi.run(['--local-scheduler', '--sam', sam], main_task_cls=SAM.SamToBam)
+
+    def test_sortbam(self):
+        luigi.run(['--local-scheduler', '--bam', bam], main_task_cls=SAM.SortBam)
+
+    def test_set_cls(self):
+        if os.path.exists(sam):
+            os.unlink(sam)
+        print SAM.SamToBam().my_cls
+        luigi.run(['--local-scheduler', '--sam', sam], main_task_cls=SAM.SamToBam)
+        SAM.SamToBam().my_cls = "BwaSampe"
+        print SAM.SamToBam().my_cls
+        if os.path.exists(sam):
+            os.unlink(sam)
         luigi.run(['--local-scheduler', '--sam', sam], main_task_cls=SAM.SamToBam)
 
 class LuigiExternalTaskFastqFile(luigi.ExternalTask):
