@@ -2,16 +2,12 @@ import os
 import unittest
 import luigi
 import time
-import cStringIO
-import pm.wrappers as wrap
 import pm.luigi.bwa as BWA
 import pm.luigi.samtools as SAM
 import pm.luigi.fastq as FASTQ
-from cement.utils import shell
-import subprocess
+import pm.luigi.picard as PICARD
+import pm.luigi.gatk as GATK
 import ngstestdata as ntd
-
-packet = cStringIO.StringIO()
 
 bwa = "bwa"
 bwaref = os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "bwa", "chr11.fa")
@@ -25,14 +21,24 @@ sai1 = os.path.join(sample + "_R1_001.sai")
 sai2 = os.path.join(sample + "_R2_001.sai")
 sam = os.path.join(sample + ".sam")
 bam = os.path.join(sample + ".bam")
+sortbam = os.path.join(sample + ".sort.bam")
 
 class TestLuigiWrappers(unittest.TestCase):
+    # @classmethod
+    # def tearDownClass(cls):
+    #     for f in [sai1, sai2, sam, bam, sortbam]:
+    #         if os.path.exists(f):
+    #             os.unlink(f)
+
+    def test_luigihelp(self):
+        luigi.run(['-h'], main_task_cls=FASTQ.FastqFileLink)
+
     def test_fastqln(self):
         luigi.run(['--local-scheduler', '--fastq', fastq1], main_task_cls=FASTQ.FastqFileLink)
 
     def test_bwaaln(self):
-        luigi.run(['--local-scheduler', '--fastq', fastq1, '--bwaref', bwaref, '--indir', indir], main_task_cls=BWA.BwaAln)
-        luigi.run(['--local-scheduler', '--fastq', fastq1, '--bwaref', bwaref, '--indir', indir], main_task_cls=BWA.BwaAln)
+        luigi.run(['--local-scheduler', '--fastq', fastq1, '--indir', indir], main_task_cls=BWA.BwaAln)
+        luigi.run(['--local-scheduler', '--fastq', fastq2, '--indir', indir], main_task_cls=BWA.BwaAln)
 
     def test_bwasampe(self):
         if os.path.exists(sam):
@@ -40,168 +46,36 @@ class TestLuigiWrappers(unittest.TestCase):
         luigi.run(['--local-scheduler', '--sai1', sai1, '--sai2', sai2, '--indir', indir, '--bwaref', bwaref], main_task_cls=BWA.BwaSampe)
 
     def test_samtobam(self):
-        luigi.run(['--local-scheduler', '--sam', sam], main_task_cls=SAM.SamToBam)
+        luigi.run(['--local-scheduler', '--sam', sam, '--indir', indir, '--require-cls', 'pm.luigi.bwa.BwaSampe'], main_task_cls=SAM.SamToBam)
 
     def test_sortbam(self):
-        luigi.run(['--local-scheduler', '--bam', bam], main_task_cls=SAM.SortBam)
+        luigi.run(['--local-scheduler', '--bam', bam, '--indir', indir], main_task_cls=SAM.SortBam)
 
-    def test_set_cls(self):
-        if os.path.exists(sam):
-            os.unlink(sam)
-        print SAM.SamToBam().my_cls
-        luigi.run(['--local-scheduler', '--sam', sam], main_task_cls=SAM.SamToBam)
-        SAM.SamToBam().my_cls = "BwaSampe"
-        print SAM.SamToBam().my_cls
-        if os.path.exists(sam):
-            os.unlink(sam)
-        luigi.run(['--local-scheduler', '--sam', sam], main_task_cls=SAM.SamToBam)
+    def test_picard_sortbam(self):
+        luigi.run(['--local-scheduler', '--bam', bam, '--indir', indir], main_task_cls=PICARD.SortSam)
 
-class LuigiExternalTaskFastqFile(luigi.ExternalTask):
-    fastq = luigi.Parameter(default=None)
+    def test_picard_alignmentmetrics(self):
+        luigi.run(['--local-scheduler', '--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref)], main_task_cls=PICARD.AlignmentMetrics)
 
-    def output(self):
-        return luigi.LocalTarget(self.fastq)
+    def test_picard_insertmetrics(self):
+        luigi.run(['--local-scheduler', '--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref)], main_task_cls=PICARD.InsertMetrics)
 
-class LuigiTaskBwaAln(luigi.Task):
-    fastq = luigi.Parameter(default=None)
+    def test_picard_dupmetrics(self):
+        if os.path.exists(sortbam.replace(".bam", ".dup_metrics")):
+            os.unlink(sortbam.replace(".bam", ".dup_metrics"))
+        luigi.run(['--local-scheduler', '--bam', sortbam], main_task_cls=PICARD.DuplicationMetrics)
 
-    def requires(self):
-        return [LuigiExternalTaskFastqFile(self.fastq)]
-    
-    def output(self):
-        return luigi.LocalTarget(os.path.join(os.path.dirname(__file__), os.path.basename(self.fastq.replace(".fastq.gz", ".sai"))))
+    def test_picard_dupmetrics_nolocal(self):
+        if os.path.exists(sortbam.replace(".bam", ".dup_metrics")):
+            os.unlink(sortbam.replace(".bam", ".dup_metrics"))
+        luigi.run(['--bam', sortbam], main_task_cls=PICARD.DuplicationMetrics)
 
-    def run(self):
-        for f in self.input():
-            cl = [bwa, 'aln', '-t', "1", bwaref, f.fn, ">", os.path.join(os.path.dirname(__file__), os.path.basename(f.fn.replace(".fastq.gz", ".sai")))]
-            out = shell.exec_cmd(" ".join(cl), shell=True)
+    def test_picard_dupmetrics_altconfig(self):
+        if os.path.exists(sortbam.replace(".bam", ".dup_metrics")):
+            os.unlink(sortbam.replace(".bam", ".dup_metrics"))
+        luigi.run(['--local-scheduler', '--bam', sortbam, '--config', os.path.join(os.getenv("HOME"), ".pm2", "jobconfig2.yaml")], main_task_cls=PICARD.DuplicationMetrics)
 
-class LuigiTaskBwaSampe(luigi.Task):
-    fastq1 = luigi.Parameter(default=None)
-    fastq2 = luigi.Parameter(default=None)
-    
-    def requires(self):
-        return [LuigiTaskBwaAln(self.fastq1), LuigiTaskBwaAln(self.fastq2)]
-
-    def output(self):
-        return luigi.LocalTarget(os.path.join(os.path.dirname(__file__), os.path.basename(self.fastq1.replace(".fastq.gz", ".sam"))))
-        
-    def run(self):
-        sai1 = self.input()[0]
-        sai2 = self.input()[1]
-        cl = [bwa, "sampe", bwaref, sai1.fn, sai2.fn, self.fastq1, self.fastq2, ">", self.output().fn]
-        out = shell.exec_cmd(" ".join(cl), shell=True)
-
-class LuigiTaskSamToBam(luigi.Task):
-    fastq1 = luigi.Parameter(default=None)
-    fastq2 = luigi.Parameter(default=None)
-
-    def requires(self):
-        return [LuigiTaskBwaSampe(self.fastq1, self.fastq2)]
-
-    def output(self):
-        return luigi.LocalTarget(os.path.join(os.path.dirname(__file__), os.path.basename(self.fastq1.replace(".fastq.gz", ".bam"))))
-
-    def run(self):
-        cl = [samtools, "view", "-bhS", self.input()[0].fn, ">", self.output().fn]
-        out = shell.exec_cmd(" ".join(cl), shell=True)
-
-class LuigiTaskRunSample(luigi.Task):
-    sample = luigi.Parameter(default=None)
-    indir = luigi.Parameter(default=os.curdir)
-    outdir = luigi.Parameter(default=os.curdir)
-
-    def requires(self):
-        fastq1 = os.path.join(self.indir, self.sample + "_R1_001.fastq.gz")
-        fastq2 = os.path.join(self.indir, self.sample + "_R2_001.fastq.gz")
-        return [LuigiTaskSamToBam(fastq1, fastq2)]
-    def output(self):
-        return luigi.LocalTarget(os.path.join(self.outdir, self.sample + "_R1_001.bam"))
-    def run(self):
-        print "running final step"
-
-class LuigiTestWrapper(unittest.TestCase):
-    def test_ls(self):
-        """Test ls function"""
-        LuigiTaskLsWrapper().run()
-
-    def test_requires(self):
-        """Test dependence on ls"""
-        LuigiTaskPrintWrapper().run()
-
-    def test_map_fastq(self):
-        """Test mapping fastq"""
-        f1 = os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "J.Doe_00_01", "P001_101_index3", "121015_BB002BBBXX", "P001_101_index3_TGACCA_L001_R1_001.fastq.gz")
-        f2 = os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "J.Doe_00_01", "P001_101_index3", "121015_BB002BBBXX", "P001_101_index3_TGACCA_L001_R2_001.fastq.gz")
-        luigi.run(['--local-scheduler', '--fastq1', f1, '--fastq2', f2], main_task_cls=LuigiTaskSamToBam)
-
-    def test_run_sample(self):
-        """Test running a pipeline based on sample name, input directory and output directory"""
-        indir = os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "J.Doe_00_01", "P001_101_index3", "121015_BB002BBBXX")
-        luigi.run(['--local-scheduler', '--sample', "P001_101_index3_TGACCA_L001", '--indir', indir], main_task_cls=LuigiTaskRunSample)
-        #luigi.run(['--local-scheduler', '-h'], main_task_cls=LuigiTaskRunSample)
-
-
-
-
-
-
-
-
-class LsWrapper(wrap.BaseWrapper):
-    class Meta:
-        interface = wrap.IWrapper
-        exe = "ls"
-        cmd_args = [exe]
-        
-    def cmd_args(self, input_file="./"):
-        if input_file:
-            self._meta.cmd_args += [input_file]
-        return self._meta.cmd_args
-
-    def cl(self, input_file=""):
-        return " ".join(self.cmd_args(input_file))
-
-class DuWrapper(wrap.BaseWrapper):
-    class Meta:
-        interface = wrap.IWrapper
-        exe = "du"
-        cmd_args = [exe]
-        
-    def cmd_args(self, input_file="./"):
-        if input_file:
-            self._meta.cmd_args += [input_file]
-        return self._meta.cmd_args
-
-    def cl(self, input_file=""):
-        return " ".join(self.cmd_args(input_file))
-
-class TestWrapper(unittest.TestCase):
-    def test_wrapper(self):
-        """Test basic wrapper functionality"""
-        lsw = LsWrapper()
-        self.assertEqual(repr(lsw), "<class 'tests.wrappers.test_wrappers.LsWrapper'>")
-        print str(lsw)
-        print lsw.cmd_args()
-        out= shell.exec_cmd(lsw.cmd_args())
-        print out
-
-    def test_gatk(self):
-        """Test GATK"""
-        gatk = GATKCalculateHsMetricsWrapper()
-        print gatk
-        print "name: " + str(gatk.__class__)
-
-    def test_registering_wrapper(self):
-        """Test registering a wrapper"""
-        program.register(GATKCalculateHsMetricsWrapper())
-
-    def test_pipeline(self):
-        """Test running a simple pipeline"""
-        ls = LsWrapper()
-        du = DuWrapper()
-        packet.write(ls.cl())
-        packet.write("\n")
-        packet.write(du.cl())
-        print packet.getvalue()
-        print shell.exec_cmd([ls.cl(), "\n", du.cl()])
+    def test_gatk_ug(self):
+        if os.path.exists(sortbam.replace(".bam", ".dup_metrics")):
+            os.unlink(sortbam.replace(".bam", ".dup_metrics"))
+        luigi.run(['--local-scheduler', '--bam', sortbam], main_task_cls=GATK.UnifiedGenotyper)

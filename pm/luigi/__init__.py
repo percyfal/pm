@@ -16,14 +16,8 @@ streamHandler.setFormatter(formatter)
 logger.addHandler(streamHandler)
 
 
-# def shell_command(cl, output, staging=True, staging_dir="tx"):
-#     outpath = os.path.join(os.path.dirname(output), staging_dir, os.path.basename(
-#     (stdout, stderr, returncode) = shell.exec_cmd(" ".join(cl), shell=True)
-#     if returncode == 1:
-#         os.unlink(output)
 
 class Task(luigi.Task):
-    staging_dir = "tx"
 
     def complete(self):
         """

@@ -2,63 +2,72 @@ import os
 import luigi
 import time
 import shutil
-import pm.luigi
 from pm.luigi.fastq import FastqFileLink
+from pm.luigi.job import JobTask, DefaultShellJobRunner
 from cement.utils import shell
 
-# These should be configurable
-BWA="bwa"
-NUM_THREADS=1
+class BwaJobRunner(DefaultShellJobRunner):
+    pass
 
-class BwaJobTask(object):
+class BwaJobTask(JobTask):
     """Main bwa class with parameters necessary for all bwa classes"""
+    _config_section = "bwa"
+    bwa = luigi.Parameter(default="bwa")
     bwaref = luigi.Parameter(default=None)
-    num_threads = luigi.Parameter(default=NUM_THREADS)
+    num_threads = luigi.Parameter(default=1)
 
     def exe(self):
         """Executable of this task"""
-        return BWA
+        return self.bwa
 
-    def main(self):
-        """compulsory main method for bwa"""
-        return None
-    
-class BwaAln(pm.luigi.Task, BwaJobTask):
+    def job_runner(self):
+        return BwaJobRunner()
+
+class BwaAln(BwaJobTask):
+    _config_subsection = "aln"
     fastq = luigi.Parameter(default=None)
+    options = luigi.Parameter(default=None)
 
     def main(self):
         return "aln"
     
+    def opts(self):
+        if self.options:
+            return '-t {} {}'.format(str(self.num_threads), self.options)            
+        else:
+            return '-t {}'.format(str(self.num_threads))
+
     def requires(self):
         return [FastqFileLink(self.fastq)]
     
     def output(self):
         return luigi.LocalTarget(self.input()[0].fn.replace(".gz", "").replace(".fastq", ".sai"))
 
-    def run(self):
-        args = ['-t', str(self.num_threads), self.bwaref, self.input()[0], ">", self.output()]
-        self.run_job(args)
+    def args(self):
+        return [self.bwaref, self.input()[0], ">", self.output()]
 
-
-class BwaSampe(pm.luigi.Task, BwaJobTask):
+class BwaSampe(BwaJobTask):
+    _config_subsection = "sampe"
     sai1 = luigi.Parameter(default=None)
     sai2 = luigi.Parameter(default=None)
-    read_suffix = luigi.Parameter(default="_R1_001")
+    # Get these with static methods
+    read1_suffix = luigi.Parameter(default="_R1_001")
+    read2_suffix = luigi.Parameter(default="_R2_001")
 
     def main(self):
         return "sampe"
-    
+
     def requires(self):
-        return [BwaAln(fastq=self.sai1.replace(".sai", ".fastq.gz"), bwaref=self.bwaref),
-                BwaAln(fastq=self.sai2.replace(".sai", ".fastq.gz"), bwaref=self.bwaref)]
+        return [BwaAln(fastq=self.sai1.replace(".sai", ".fastq.gz")),
+                BwaAln(fastq=self.sai2.replace(".sai", ".fastq.gz"))]
 
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.sai1).replace(self.read_suffix, "").replace(".sai", ".sam"))
+        return luigi.LocalTarget(os.path.abspath(self.sai1).replace(self.read1_suffix, "").replace(".sai", ".sam"))
 
-    def run(self):
+    def args(self):
         sai1 = self.input()[0]
         sai2 = self.input()[1]
         fastq1 = luigi.LocalTarget(sai1.fn.replace(".sai", ".fastq.gz"))
         fastq2 = luigi.LocalTarget(sai2.fn.replace(".sai", ".fastq.gz"))
-        args = [self.bwaref, sai1, sai2, fastq1, fastq2, ">", self.output()]
-        self.run_job(args)
+        return [self.bwaref, sai1, sai2, fastq1, fastq2, ">", self.output()]
+

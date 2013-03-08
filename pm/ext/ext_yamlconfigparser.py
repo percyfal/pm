@@ -135,7 +135,7 @@ class YAMLParserConfigHandler(config.CementConfigHandler):
         :rtype: boolean
         
         """
-        if key in self.options(section):
+        if key in self.options(section, subsection):
             return True
         else:
             return False

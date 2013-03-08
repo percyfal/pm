@@ -1,5 +1,6 @@
 import os
 import luigi
+import pm.luigi.external
 
 class FastqFileLink(luigi.Task):
     fastq = luigi.Parameter(default=None)
@@ -7,16 +8,11 @@ class FastqFileLink(luigi.Task):
     indir = luigi.Parameter(default=os.curdir, is_global=True)
 
     def requires(self):
-        return [ExternalFastqFile(fastq=os.path.join(self.indir, os.path.basename(self.fastq)))]
+        return pm.luigi.external.FastqFile(fastq=os.path.join(self.indir, os.path.basename(self.fastq)))
 
     def output(self):
         return luigi.LocalTarget(os.path.join(self.outdir, os.path.basename(self.fastq)))
 
     def run(self):
-        os.symlink(self.input()[0].fn, self.output().fn)
+        os.symlink(self.input().fn, self.output().fn)
         
-class ExternalFastqFile(luigi.ExternalTask):
-    fastq = luigi.Parameter(default=None)
-
-    def output(self):
-        return luigi.LocalTarget(self.fastq)

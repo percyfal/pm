@@ -1,50 +1,90 @@
 import os
 import luigi
-from pm.luigi.bwa import BwaSampe
-from cement.utils import shell
+import logging
+import pm.luigi.external
+import pm.luigi.bwa
+from pm.luigi.job import JobTask, DefaultShellJobRunner
 
-SAMTOOLS="samtools"
+logger = logging.getLogger('luigi-interface')
 
-class Samtools(object):
-    exe = SAMTOOLS
+class SamtoolsJobRunner(DefaultShellJobRunner):
+    pass
 
-class SamToBam(luigi.Task, Samtools):
+class SamtoolsJobTask(JobTask):
+    """Main samtools job task"""
+    _config_section = "samtools"
     sam = luigi.Parameter(default=None)
-    sam_cls = luigi.Parameter(default="BwaSampe")
-    opt = luigi.Parameter(default="-bSh")
-    my_cls = "test"
+    bam = luigi.Parameter(default=None)
+    samtools = luigi.Parameter(default="samtools")
+    require_cls = luigi.Parameter(default="pm.luigi.external.SamFile")
+
+    def exe(self):
+        """Executable"""
+        return self.samtools
+
+    def job_runner(self):
+        return SamtoolsJobRunner()
 
     def requires(self):
-        # Sam file can come from different Tasks - how cope in best way?
-        # Probably by using external task and separating 
-        print "In requires: " + self.my_cls + "\n\n"
-        if self.sam_cls == "BwaSampe":
-            sai1 = os.path.join(self.sam.replace(".sam", BwaSampe().read_suffix + ".sai"))
-            sai2 = os.path.join(self.sam.replace(".sam", BwaSampe().read_suffix + ".sai").replace("_R1_", "_R2_"))
-            return [BwaSampe(sai1=sai1, sai2=sai2)]
+        if (self.require_cls == "pm.luigi.bwa.BwaSampe"):
+            return pm.luigi.bwa.BwaSampe(sai1=os.path.join(self.sam.replace(".sam", pm.luigi.bwa.BwaSampe().read1_suffix + ".sai")),
+                            sai2=os.path.join(self.sam.replace(".sam", pm.luigi.bwa.BwaSampe().read2_suffix + ".sai")))
+        elif (self.require_cls == "pm.luigi.external.BamFile"):
+            return pm.luigi.external.BamFile(bam=self.bam)
+        elif (self.require_cls == "pm.luigi.external.SamFile"):
+            return pm.luigi.external.SamFile(sam=self.sam)
         else:
-            print "No such class " + self.sam_cls
-            pass
+            logging.warn("No such class {}; using default: {}".format(self.require_cls, self.get_param_default("require_cls")))
+            return pm.luigi.external.SamFile(sam=self.sam)
+
+class SamToBam(SamtoolsJobTask):
+    _config_subsection = "samtobam"
+    options = luigi.Parameter(default="-bSh")
+    require_cls = luigi.Parameter(default="pm.luigi.external.SamFile")
+
+    def main(self):
+        return "view"
 
     def output(self):
-        return luigi.LocalTarget(self.sam.replace(".sam", ".bam"))
+        return luigi.LocalTarget(os.path.abspath(self.sam).replace(".sam", ".bam"))
 
-    def run(self):
-        cl = [self.exe, "view", self.opt, self.sam, "-o", self.sam.replace(".sam", ".bam")]
-        (stdout, stderr, returncode) = shell.exec_cmd(" ".join(cl), shell=True)
-        if returncode == 1:
-            os.unlink(self.output().fn)
+    def args(self):
+        return [self.sam, ">", self.output()]
 
-class SortBam(luigi.Task, Samtools):
+class SortBam(SamtoolsJobTask):
+    _config_subsection = "sortbam"
     bam = luigi.Parameter(default=None)
-    opt = luigi.Parameter(default="")
+    options = luigi.Parameter(default=None)
 
     def requires(self):
         return [SamToBam(sam=self.bam.replace(".bam", ".sam"))]
 
     def output(self):
-        return luigi.LocalTarget(self.bam.replace(".bam", ".sort.bam"))
+        return luigi.LocalTarget(os.path.abspath(self.bam).replace(".bam", ".sort.bam"))
 
-    def run(self):
-        cl = [self.exe, "sort", self.opt, self.bam, self.bam.replace(".bam", ".sort")]
-        out = shell.exec_cmd(" ".join(cl), shell=True)
+    def main(self):
+        return "sort"
+
+    def add_suffix(self):
+        return ".bam"
+
+    def args(self):
+        output_prefix = luigi.LocalTarget(self.output().fn.replace(".bam", ""))
+        return [self.bam, output_prefix]
+
+class IndexBam(SamtoolsJobTask):
+    _config_subsection = "indexbam"
+    bam = luigi.Parameter(default=None)
+    options = luigi.Parameter(default=None)
+
+    def requires(self):
+        return pm.luigi.external.BamFile(bam=self.bam)
+
+    def output(self):
+        return luigi.LocalTarget(os.path.abspath(self.bam).replace(".bam", ".bam.bai"))
+
+    def main(self):
+        return "index"
+
+    def args(self):
+        return [self.bam, self.output()]
