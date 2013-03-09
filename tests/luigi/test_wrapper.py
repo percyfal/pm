@@ -51,54 +51,49 @@ class TestLuigiWrappers(unittest.TestCase):
         luigi.run(['-h'], main_task_cls=FASTQ.FastqFileLink)
 
     def test_fastqln(self):
-        luigi.run(['--local-scheduler', '--fastq', fastq1], main_task_cls=FASTQ.FastqFileLink)
+        luigi.run(_luigi_args(['--fastq', fastq1]), main_task_cls=FASTQ.FastqFileLink)
 
     def test_bwaaln(self):
-        luigi.run(['--local-scheduler', '--fastq', fastq1, '--indir', indir], main_task_cls=BWA.BwaAln)
-        luigi.run(['--local-scheduler', '--fastq', fastq2, '--indir', indir], main_task_cls=BWA.BwaAln)
+        luigi.run(_luigi_args(['--fastq', fastq1, '--indir', indir]), main_task_cls=BWA.BwaAln)
+        luigi.run(_luigi_args(['--fastq', fastq2, '--indir', indir]), main_task_cls=BWA.BwaAln)
 
     def test_bwasampe(self):
         if os.path.exists(sam):
             os.unlink(sam)
-        luigi.run(['--local-scheduler', '--sai1', sai1, '--sai2', sai2, '--indir', indir, '--bwaref', bwaref], main_task_cls=BWA.BwaSampe)
+        luigi.run(_luigi_args(['--sai1', sai1, '--sai2', sai2, '--indir', indir]), main_task_cls=BWA.BwaSampe)
 
     def test_samtobam(self):
-        luigi.run(['--local-scheduler', '--sam', sam, '--indir', indir, '--require-cls', 'pm.luigi.bwa.BwaSampe'], main_task_cls=SAM.SamToBam)
+        luigi.run(_luigi_args(['--sam', sam, '--indir', indir, '--parent-task', 'pm.luigi.bwa.BwaSampe']), main_task_cls=SAM.SamToBam)
 
     def test_sortbam(self):
-        luigi.run(['--local-scheduler', '--bam', bam, '--indir', indir], main_task_cls=SAM.SortBam)
+        luigi.run(_luigi_args(['--bam', bam, '--indir', indir]), main_task_cls=SAM.SortBam)
 
     def test_picard_sortbam(self):
-        luigi.run(['--local-scheduler', '--bam', bam, '--indir', indir], main_task_cls=PICARD.SortSam)
+        luigi.run(_luigi_args(['--bam', bam, '--indir', indir]), main_task_cls=PICARD.SortSam)
 
     def test_picard_alignmentmetrics(self):
-        luigi.run(['--local-scheduler', '--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref)], main_task_cls=PICARD.AlignmentMetrics)
+        luigi.run(_luigi_args(['--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref)]), main_task_cls=PICARD.AlignmentMetrics)
 
     def test_picard_insertmetrics(self):
-        luigi.run(['--local-scheduler', '--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref)], main_task_cls=PICARD.InsertMetrics)
+        luigi.run(_luigi_args(['--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref)]), main_task_cls=PICARD.InsertMetrics)
 
     def test_picard_dupmetrics(self):
         if os.path.exists(sortbam.replace(".bam", ".dup_metrics")):
             os.unlink(sortbam.replace(".bam", ".dup_metrics"))
-        luigi.run(['--local-scheduler', '--bam', sortbam], main_task_cls=PICARD.DuplicationMetrics)
-
-    def test_picard_dupmetrics_nolocal(self):
-        if os.path.exists(sortbam.replace(".bam", ".dup_metrics")):
-            os.unlink(sortbam.replace(".bam", ".dup_metrics"))
-        luigi.run(['--bam', sortbam], main_task_cls=PICARD.DuplicationMetrics)
+        luigi.run(_luigi_args(['--bam', sortbam]), main_task_cls=PICARD.DuplicationMetrics)
 
     def test_picard_dupmetrics_altconfig(self):
         if os.path.exists(sortbam.replace(".bam", ".dup_metrics")):
             os.unlink(sortbam.replace(".bam", ".dup_metrics"))
-        luigi.run(['--local-scheduler', '--bam', sortbam, '--config', os.path.join(os.getenv("HOME"), ".pm2", "jobconfig2.yaml")], main_task_cls=PICARD.DuplicationMetrics)
+        luigi.run(_luigi_args(['--bam', sortbam, '--config', os.path.join(os.getenv("HOME"), ".pm2", "jobconfig2.yaml")]), main_task_cls=PICARD.DuplicationMetrics)
 
     def test_gatk_ug(self):
         if os.path.exists(sortbam.replace(".bam", ".dup_metrics")):
             os.unlink(sortbam.replace(".bam", ".dup_metrics"))
-        luigi.run([local_scheduler, '--bam', sortbam], main_task_cls=GATK.UnifiedGenotyper)
+        luigi.run(_luigi_args(['--bam', sortbam]), main_task_cls=GATK.UnifiedGenotyper)
 
     def test_picard_metrics(self):
-        luigi.run(_luigi_args(['--bam', bam, '--config', 'pipeconf.yaml', '--indir', indir]), main_task_cls=PICARD.PicardMetrics)
+        luigi.run(_luigi_args(['--bam', bam, '--config', 'pipeconf.yaml']), main_task_cls=PICARD.PicardMetrics)
         
 class TestLuigiParallel(unittest.TestCase):
     def test_bwa_samples(self):
@@ -143,7 +138,7 @@ class TestLuigiParallel(unittest.TestCase):
                 
             def output(self):
                 return luigi.LocalTarget("tabort.txt")
-        luigi.run(['--local-scheduler', '--samples', "P001_101_index3", '--indir', projectdir], main_task_cls=BwaAlnSamples)
+        luigi.run(_luigi_args(['--samples', "P001_101_index3", '--indir', projectdir]), main_task_cls=BwaAlnSamples)
         
 
 class SampeToSamtools(SAM.SamToBam):
@@ -160,11 +155,10 @@ class SampeToSamtools(SAM.SamToBam):
 
 class TestLuigiPipelines(unittest.TestCase):
     def test_sampe_to_samtools(self):
-        luigi.run(['--local-scheduler', '--sam', sam, '--indir', indir], main_task_cls=SampeToSamtools)
+        luigi.run(_luigi_args(['--sam', sam, '--indir', indir]), main_task_cls=SampeToSamtools)
 
     def test_sampe_to_samtools_sort(self):
-        luigi.run(['--local-scheduler', '--bam', bam, '--indir', indir, '--config-file', 'pipeconf.yaml'], main_task_cls=SAM.SortBam)
+        luigi.run(_luigi_args(['--bam', bam, '--indir', indir, '--config-file', 'pipeconf.yaml']), main_task_cls=SAM.SortBam)
 
     def test_sampe_to_picard_sort(self):
-        luigi.run(['--local-scheduler', '--bam', bam, '--indir', indir, '--config-file', 'pipeconf.yaml'], main_task_cls=PICARD.SortSam)
-        #luigi.run(['--bam', bam, '--indir', indir, '--config-file', 'pipeconf.yaml'], main_task_cls=PICARD.SortSam)
+        luigi.run(_luigi_args(['--bam', bam, '--indir', indir, '--config-file', 'pipeconf.yaml']), main_task_cls=PICARD.SortSam)

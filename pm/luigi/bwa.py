@@ -9,6 +9,20 @@ from cement.utils import shell
 class BwaJobRunner(DefaultShellJobRunner):
     pass
 
+class InputFastqFile(JobTask):
+    _config_section = "bwa"
+    _config_subsection = "input_fastq_file"
+    fastq = luigi.Parameter(default=None)
+    parent_task = "pm.luigi.external.FastqFile"
+    
+    def requires(self):
+        cls = self.set_parent_task()
+        return cls(fastq=self.fastq)
+    def output(self):
+        return luigi.LocalTarget(os.path.abspath(self.input().fn))
+    def run(self):
+        pass
+
 class BwaJobTask(JobTask):
     """Main bwa class with parameters necessary for all bwa classes"""
     _config_section = "bwa"
@@ -23,28 +37,34 @@ class BwaJobTask(JobTask):
     def job_runner(self):
         return BwaJobRunner()
 
+
 class BwaAln(BwaJobTask):
     _config_subsection = "aln"
     fastq = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
+    parent_task = luigi.Parameter(default="pm.luigi.bwa.InputFastqFile")
+    can_multi_thread = True
 
     def main(self):
         return "aln"
     
     def opts(self):
-        if self.options:
-            return '-t {} {}'.format(str(self.num_threads), self.options)            
-        else:
-            return '-t {}'.format(str(self.num_threads))
+        return '-t {} {}'.format(str(self.threads()), self.options if self.options else "")
 
     def requires(self):
-        return [FastqFileLink(self.fastq)]
+        cls = self.set_parent_task()
+        return cls(fastq=self.fastq)
     
     def output(self):
-        return luigi.LocalTarget(self.input()[0].fn.replace(".gz", "").replace(".fastq", ".sai"))
+        return luigi.LocalTarget(self.input().fn.replace(".gz", "").replace(".fastq", ".sai"))
 
     def args(self):
-        return [self.bwaref, self.input()[0], ">", self.output()]
+        return [self.bwaref, self.input()[0], "-f", self.output()]
+
+class BwaAlnWrapperTask(luigi.WrapperTask):
+    fastqfiles = luigi.Parameter(default=[], is_list=True)
+    def requires(self):
+        return [BwaAln(fastq=x) for x in self.fastqfiles]
 
 class BwaSampe(BwaJobTask):
     _config_subsection = "sampe"
@@ -54,6 +74,8 @@ class BwaSampe(BwaJobTask):
     read1_suffix = luigi.Parameter(default="_R1_001")
     read2_suffix = luigi.Parameter(default="_R2_001")
     read_group = luigi.Parameter(default=None)
+    can_multi_thread = False
+    max_memory_gb = 5 # bwa documentation says ~5.4 for human genome
 
     def main(self):
         return "sampe"
@@ -75,3 +97,4 @@ class BwaSampe(BwaJobTask):
             self.read_group = "-r \"{}\"".format("\t".join(["@RG", "ID:{}".format(foo), "SM:{}".format(foo)]))
         return [self.read_group, self.bwaref, sai1, sai2, fastq1, fastq2, ">", self.output()]
 
+    

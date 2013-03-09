@@ -6,6 +6,7 @@ import subprocess
 import logging
 import warnings
 import luigi
+from itertools import izip
 from luigi.task import flatten
 from cement.utils import shell
 from pm.luigi import interface
@@ -72,16 +73,19 @@ class DefaultShellJobRunner(JobRunner):
                 logger.info("renaming {0} to {1}".format(a.path, b.path))
                 a.move(b.path)
         else:
-            raise Exception("Job '{}' failed: \n{}".format(' '.join(arglist).replace("= ", "="), " ".join([stderr])))
+            raise Exception("Job '{}' failed: \n{}".format(' '.join(arglist), " ".join([stderr])))
                 
 class BaseJobTask(luigi.Task):
     config_file = luigi.Parameter(is_global=True, default=os.path.join(os.getenv("HOME"), ".pm2", "jobconfig.yaml"))
     options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default=None)
+    num_threads = luigi.Parameter(default=1)
     _config_section = None
     _config_subsection = None
     task_id = None
     n_reduce_tasks = 8
+    can_multi_thread = False
+    max_memory_gb = 3
 
     def __init__(self, *args, **kwargs):
         params = self.get_params()
@@ -122,6 +126,17 @@ class BaseJobTask(luigi.Task):
     def opts(self):
         """Generic options placeholder"""
         return self.options
+
+    def threads(self):
+        """Get number of threads."""
+        if self.can_multi_thread:
+            return self.num_threads
+        else:
+            return 1
+
+    def max_memory(self):
+        """Get the maximum memory (in Gb) that the task may use"""
+        return self.max_memory_gb
 
     def add_suffix(self):
         """Some programs (e.g. samtools sort) have the bad habit of
@@ -176,8 +191,6 @@ class BaseJobTask(luigi.Task):
         default_task = self.get_param_default("parent_task")
         default_mod = ".".join(default_task.split(".")[0:-1])
         default_cls = default_task.split(".")[-1]
-        print opt_mod, opt_cls
-        print default_mod, default_cls
         try:
             mod = __import__(opt_mod, fromlist=[opt_cls])
             cls = getattr(mod, opt_cls)
@@ -186,6 +199,37 @@ class BaseJobTask(luigi.Task):
             logger.warn("No class found: using default class {}".format(".".join([default_mod, default_cls])))
             ret_mod = __import__(default_mod, fromlist=[default_cls])
             ret_cls = getattr(ret_mod, default_cls)
+        return ret_cls
+
+    def set_parent_task_list(self):
+        """Try to import a module task class represented as string in
+        parent_task and use it as such
+        """
+        ret_cls = []
+        opt_mod = []
+        default_cls = []
+        default_task = self.get_param_default("parent_task")
+        for task in default_task:
+            mod = ".".join(default_task.split(".")[0:-1])
+            cls = default_task.split(".")[-1]
+            imp_mod = __import__(mod, fromlist=[cls])
+            default_cls.append(getattr(imp_mod, cls))
+
+        for task in self.parent_task.split(","):
+            opt_mod.append((".".join(task.split(".")[0:-1]),
+                            task.split(".")[-1]))
+
+        for o_mod, o_cls in opt_mod:
+            print o_mod, o_cls
+            try:
+                mod = __import__(o_mod, fromlist=[o_cls])
+                cls = getattr(mod, o_cls)
+                ret_cls.append(cls)
+            except:
+                logger.warn("No such class '{0}': using default class '{1}'".format(".".join([o_mod, o_cls]),
+                                                                                    ",".join(default_cls)))
+                ret_cls = default_cls
+
         return ret_cls
 
 class JobTask(BaseJobTask):

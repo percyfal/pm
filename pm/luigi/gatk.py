@@ -45,12 +45,23 @@ class GATKJobRunner(DefaultShellJobRunner):
         else:
             raise Exception("Job '{}' failed: \n{}".format(cmd, " ".join([stderr])))
 
+class InputBamFile(JobTask):
+    _config_section = "gatk"
+    _config_subsection = "input_bam_file"
+    bam = luigi.Parameter(default=None)
+    parent_task = luigi.Parameter(default="pm.luigi.external.BamFile")
+    def requires(self):
+        cls = self.set_parent_task()
+        return cls(bam=self.bam)
+    def output(self):
+        return luigi.LocalTarget(os.path.abspath(self.input()).fn)
+    
 class GATKJobTask(JobTask):
     _config_section = "gatk"
     gatk = luigi.Parameter(default=GATK_JAR)
     bam = luigi.Parameter(default=None)
     java_options = luigi.Parameter(default="-Xmx2g")
-    parent_task = luigi.Parameter(default="pm.luigi.external.BamFile")
+    parent_task = luigi.Parameter(default="pm.luigi.gatk.InputBamFile")
     ref = luigi.Parameter(default=None)
     # Additional commonly used options
     target_region = luigi.Parameter(default=None)
@@ -68,16 +79,14 @@ class GATKJobTask(JobTask):
         return GATKJobRunner()
 
     def requires(self):
-        if self.parent_task == "pm.luigi.external.BamFile":
-            return [pm.luigi.external.BamFile(bam=self.bam), pm.luigi.samtools.IndexBam(bam=self.bam)]
-        else:
-            logging.warn("No such class {}; using default: {}".format(self.parent_task, self.get_param_default("parent_task")))
-            return pm.luigi.external.BamFile(bam=self.bam)
+        cls = self.set_parent_task()
+        return [cls(bam=self.bam), pm.luigi.samtools.IndexBam(bam=self.bam)]
 
-class Realignment(GATKJobTask):
+class RealignmentTargetCreator(GATKJobTask):
     _config_subsection = "RealignerTargetCreator"
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
+    known = luigi.Parameter(default=[], is_list=True)
     
     def opts(self):
         retval = self.options if self.options else ""
@@ -86,16 +95,61 @@ class Realignment(GATKJobTask):
         retval += " -R {}".format(self.ref)
         if self.target_region:
             retval += "-L {}".format(self.target_region)
+        retval += " ".join(["-known {}".format(x) for x in self.known])
         return retval
     
     def main(self):
         return "RealignerTargetCreator"
 
-class IndelRealigener(GATKJobTask):
+    def output(self):
+        return luigi.LocalTarget(os.path.abspath(self.input()[0].fn).replace(".bam", ".intervals"))
+
+class IndelRealigner(GATKJobTask):
     _config_subsection = "IndelRealigner"
+    bam = luigi.Parameter(default=None)
+    known = luigi.Parameter(default=[], is_list=True)
+    parent_task = "pm.luigi.gatk.InputBamFile"
+
+    def main(self):
+        return "IndelRealigner"
+
+    def requires(self):
+        cls = self.set_parent_task()
+        return {'input_bam' : cls(bam=self.bam), 
+                'intervals' : RealignmentTargetCreator(bam=self.bam)}
+
+    def output(self):
+        return luigi.LocalTarget(os.path.abspath(self.input()['input_bam'].fn).replace(".bam", ".realign.vcf"))
+
+    def opts(self):
+        return "{} {}".format(" ".join(["-known {}".format(x) for x in self.known]), self.options)
+
+    def args(self):
+        return ["-I", self.input()['input_bam'], "-o", self.output(), "--targetIntervals", self.input()['intervals']]
+
+class BaseRecalibrator(GATKJobTask):
+    _config_subsection = "baserecalibrator"
+    bam = luigi.Parameter(default=None)
+    options = luigi.Parameter(default=None)
+    knownSites = luigi.Parameter(default=[])
+
+    def opts(self):
+        retval = self.options if self.options else ""
+        if not self.ref:
+            raise Exception("need reference for BaseRecalibrator")
+        retval += " -R {}".format(self.ref)
+        if self.target_region:
+            retval += "-L {}".format(self.target_region)
+        retval += " ".join(["-knownSites {}".format(x) for x in self.knownSites])
+        return retval
+
+    def output(self):
+        return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", "recal_data.grp"))
     
+    def args(self):
+        return ["-I", self.input(), "-o", self.output()]
 
-
+        
 class UnifiedGenotyper(GATKJobTask):
     _config_subsection = "unifiedgenotyper"
     bam = luigi.Parameter(default=None)
@@ -115,7 +169,6 @@ class UnifiedGenotyper(GATKJobTask):
 
     def output(self):
         return luigi.LocalTarget(os.path.abspath(self.input()[0].fn).replace(".bam", ".vcf"))
-    #pm.luigi.vcf.IndexVcf(vcf=os.path.abspath(self.input()[0].fn).replace(".bam", ".vcf"))]
 
     def args(self):
         return ["-I", self.input()[0], "-o", self.output()]

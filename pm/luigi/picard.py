@@ -80,7 +80,6 @@ class SortSam(PicardJobTask):
     _config_subsection = "sortsam"
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default="SO=coordinate MAX_RECORDS_IN_RAM=750000")
-    parent_task = luigi.Parameter("pm.luigi.picard.InputBamFile")
 
     def jar(self):
         return "SortSam.jar"
@@ -97,7 +96,6 @@ class AlignmentMetrics(PicardJobTask):
     def jar(self):
         return "CollectAlignmentSummaryMetrics.jar"
     def output(self):
-        print "Alignment input " + str(self.input())
         return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".align_metrics"))
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()]
@@ -145,5 +143,5 @@ class HsMetrics(PicardJobTask):
 class PicardMetrics(luigi.WrapperTask):
     bam = luigi.Parameter(default=None)
     def requires(self):
-        return [ DuplicationMetrics(bam=self.bam), HsMetrics(bam=self.bam),
+        return [DuplicationMetrics(bam=self.bam), HsMetrics(bam=self.bam),
                 InsertMetrics(bam=self.bam), AlignmentMetrics(bam=self.bam)]

@@ -10,11 +10,29 @@ logger = logging.getLogger('luigi-interface')
 class SamtoolsJobRunner(DefaultShellJobRunner):
     pass
 
-class SamFile(luigi.LocalTarget):
+class InputSamFile(JobTask):
     """Wrapper task that serves as entry point for samtools tasks that take sam file as input"""
+    _config_section = "samtools"
+    _config_subsection = "input_sam_file"
     sam = luigi.Parameter(default=None)
+    parent_task = "pm.luigi.external.SamFile"
+
     def requires(self):
-        return pm.luigi.external.SamFile(sam=self.sam)
+        cls = self.set_parent_task()
+        return cls(sam=self.sam)
+    def output(self):
+        return luigi.LocalTarget(self.sam)
+
+class InputBamFile(JobTask):
+    """Wrapper task that serves as entry point for samtools tasks that take bam file as input"""
+    _config_section = "samtools"
+    _config_subsection = "input_bam_file"
+    sam = luigi.Parameter(default=None)
+    parent_task = "pm.luigi.external.BamFile"
+
+    def requires(self):
+        cls = self.set_parent_task()
+        return cls(sam=self.sam)
     def output(self):
         return luigi.LocalTarget(self.sam)
     
@@ -24,12 +42,14 @@ class SamtoolsJobTask(JobTask):
     sam = luigi.Parameter(default=None)
     bam = luigi.Parameter(default=None)
     samtools = luigi.Parameter(default="samtools")
-    parent_task = luigi.Parameter(default="pm.luigi.external.SamFile")
+    parent_task = luigi.Parameter(default="pm.luigi.samtools.InputSamFile")
 
-    def __init__(self, *args, **kwargs):
-        super(SamtoolsJobTask, self).__init__(*args, **kwargs)
-        if self.bam and not self.sam:
-            self.sam = self.bam.replace(".bam", ".sam")
+    #    def __init__(self, *args, **kwargs):
+    #         super(SamtoolsJobTask, self).__init__(*args, **kwargs)
+    # if self.bam and not self.sam:
+    #     self.sam = self.bam.replace(".bam", ".sam")
+    # if self.sam and not self.bam:
+    #     self.bam = self.bam.replace(".sam", ".sam")
 
     def exe(self):
         """Executable"""
@@ -39,21 +59,19 @@ class SamtoolsJobTask(JobTask):
         return SamtoolsJobRunner()
 
     def requires(self):
-        if (self.require_cls == "pm.luigi.bwa.BwaSampe"):
-            return pm.luigi.bwa.BwaSampe(sai1=os.path.join(self.sam.replace(".sam", pm.luigi.bwa.BwaSampe().read1_suffix + ".sai")),
-                            sai2=os.path.join(self.sam.replace(".sam", pm.luigi.bwa.BwaSampe().read2_suffix + ".sai")))
-        elif (self.require_cls == "pm.luigi.external.BamFile"):
-            return pm.luigi.external.BamFile(bam=self.bam)
-        elif (self.require_cls == "pm.luigi.external.SamFile"):
-            return pm.luigi.external.SamFile(sam=self.sam)
+        cls = self.set_parent_task()
+        if self.sam and not self.bam:
+            return cls(sam=self.sam)
+        elif self.bam and not self.sam:
+            return cls(bam=self.bam)
         else:
-            logging.warn("No such class {}; using default: {}".format(self.require_cls, self.get_param_default("require_cls")))
-            return pm.luigi.external.SamFile(sam=self.sam)
+            logger.warn("Both sam file ('{0}') and bam file ('{1}') options set: using sam file argument".format(self.sam, self.bam))
+            return cls(sam=self.sam)
 
 class SamToBam(SamtoolsJobTask):
     _config_subsection = "samtobam"
     options = luigi.Parameter(default="-bSh")
-    parent_task = luigi.Parameter(default="pm.luigi.external.SamFile")
+    parent_task = luigi.Parameter(default="pm.luigi.samtools.InputSamFile")
 
     def main(self):
         return "view"
@@ -75,6 +93,7 @@ class SortBam(SamtoolsJobTask):
     parent_task = luigi.Parameter(default="pm.luigi.samtools.SamToBam")
 
     def requires(self):
+        cls = self.set_parent_task()
         return [SamToBam(sam=os.path.abspath(self.bam).replace(".bam", ".sam"))]
 
     def output(self):
@@ -94,9 +113,11 @@ class IndexBam(SamtoolsJobTask):
     _config_subsection = "indexbam"
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
+    parent_task = luigi.Parameter(default="pm.luigi.samtools.InputBamFile")
 
     def requires(self):
-        return pm.luigi.external.BamFile(bam=self.bam)
+        cls = self.set_parent_task()
+        return cls(bam=self.bam)
 
     def output(self):
         return luigi.LocalTarget(os.path.abspath(self.bam).replace(".bam", ".bam.bai"))
