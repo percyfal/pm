@@ -2,7 +2,6 @@ import os
 import luigi
 import time
 import shutil
-from pm.luigi.fastq import FastqFileLink
 from pm.luigi.job import JobTask, DefaultShellJobRunner
 from cement.utils import shell
 
@@ -13,12 +12,15 @@ class InputFastqFile(JobTask):
     _config_section = "bwa"
     _config_subsection = "input_fastq_file"
     fastq = luigi.Parameter(default=None)
-    parent_task = "pm.luigi.external.FastqFile"
+    parent_task = luigi.Parameter(default="pm.luigi.external.FastqFile")
     
     def requires(self):
         cls = self.set_parent_task()
         return cls(fastq=self.fastq)
     def output(self):
+        print "Parent task in bwa.InputFastqFile: " + str(self.parent_task)
+        print "Input : " + str(os.path.abspath(self.input().fn))
+        print "Fastq parameter " + str(os.path.abspath(self.fastq))
         return luigi.LocalTarget(os.path.abspath(self.input().fn))
     def run(self):
         pass
@@ -56,10 +58,11 @@ class BwaAln(BwaJobTask):
         return cls(fastq=self.fastq)
     
     def output(self):
-        return luigi.LocalTarget(self.input().fn.replace(".gz", "").replace(".fastq", ".sai"))
+        return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".gz", "").replace(".fastq", ".sai"))
 
     def args(self):
-        return [self.bwaref, self.input()[0], "-f", self.output()]
+        # bwa aln "-f" option seems to be broken!?!
+        return [self.bwaref, self.input(), ">", self.output()]
 
 class BwaAlnWrapperTask(luigi.WrapperTask):
     fastqfiles = luigi.Parameter(default=[], is_list=True)

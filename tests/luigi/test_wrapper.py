@@ -11,25 +11,35 @@ import pm.luigi.fastq as FASTQ
 import pm.luigi.picard as PICARD
 import pm.luigi.gatk as GATK
 import pm.luigi.external
-import ngstestdata as ntd
+# Check for ngstestdata
+ngsloadmsg = "No ngstestdata module; skipping test. Do a 'git clone https://github.com/percyfal/ngs.test.data' followed by 'python setup.py install'"
+has_ngstestdata = False
+try:
+    import ngstestdata as ntd
+    has_ngstestdata = True
+except:
+    pass
 
 logger = logging.getLogger('luigi-interface')
 
 bwa = "bwa"
-bwaref = os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "bwa", "chr11.fa")
-bwaseqref = os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "seq", "chr11.fa")
 samtools = "samtools"
-indir = os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "J.Doe_00_01", "P001_101_index3", "121015_BB002BBBXX")
-projectdir = os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "J.Doe_00_01")
-sample = "P001_101_index3_TGACCA_L001"
-fastq1 = os.path.join(indir, sample + "_R1_001.fastq.gz")
-fastq2 = os.path.join(indir, sample + "_R2_001.fastq.gz")
-sai1 = os.path.join(sample + "_R1_001.sai")
-sai2 = os.path.join(sample + "_R2_001.sai")
-sam = os.path.join(sample + ".sam")
-bam = os.path.join(sample + ".bam")
-sortbam = os.path.join(sample + ".sort.bam")
 
+if has_ngstestdata:
+    bwaref = os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "bwa", "chr11.fa")
+    bwaseqref = os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "seq", "chr11.fa")
+    indir = os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "J.Doe_00_01", "P001_101_index3", "121015_BB002BBBXX")
+    projectdir = os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "J.Doe_00_01")
+    sample = "P001_101_index3_TGACCA_L001"
+    fastq1 = os.path.join(indir, sample + "_R1_001.fastq.gz")
+    fastq2 = os.path.join(indir, sample + "_R2_001.fastq.gz")
+    sai1 = os.path.join(sample + "_R1_001.sai")
+    sai2 = os.path.join(sample + "_R2_001.sai")
+    sam = os.path.join(sample + ".sam")
+    bam = os.path.join(sample + ".bam")
+    sortbam = os.path.join(sample + ".sort.bam")
+
+localconf = "pipeconf.yaml"
 local_scheduler = '--local-scheduler'
 process = os.popen("ps x -o pid,args | grep luigid | grep -v grep").read() #sometimes have to use grep -v grep
 if process:
@@ -40,6 +50,9 @@ def _luigi_args(args):
         return [local_scheduler] + args
     return args
 
+
+
+@unittest.skipIf(not has_ngstestdata, ngsloadmsg)
 class TestLuigiWrappers(unittest.TestCase):
     # @classmethod
     # def tearDownClass(cls):
@@ -48,28 +61,32 @@ class TestLuigiWrappers(unittest.TestCase):
     #             os.unlink(f)
 
     def test_luigihelp(self):
-        luigi.run(['-h'], main_task_cls=FASTQ.FastqFileLink)
+        try:
+            luigi.run(['-h'], main_task_cls=FASTQ.FastqFileLink)
+        except:
+            pass
 
+    # NB: fastq1 has to be absolute path, otherwise no link is created
     def test_fastqln(self):
         luigi.run(_luigi_args(['--fastq', fastq1]), main_task_cls=FASTQ.FastqFileLink)
 
     def test_bwaaln(self):
-        luigi.run(_luigi_args(['--fastq', fastq1, '--indir', indir]), main_task_cls=BWA.BwaAln)
-        luigi.run(_luigi_args(['--fastq', fastq2, '--indir', indir]), main_task_cls=BWA.BwaAln)
+        luigi.run(_luigi_args(['--fastq', fastq1, '--config-file', localconf]), main_task_cls=BWA.BwaAln)
+        luigi.run(_luigi_args(['--fastq', fastq2, '--config-file', localconf]), main_task_cls=BWA.BwaAln)
 
+    # Will currently fail if links aren't present since it doesn't
+    # know where the links come from (hence parameter indir)
     def test_bwasampe(self):
-        if os.path.exists(sam):
-            os.unlink(sam)
-        luigi.run(_luigi_args(['--sai1', sai1, '--sai2', sai2, '--indir', indir]), main_task_cls=BWA.BwaSampe)
+        luigi.run(_luigi_args(['--sai1', sai1, '--sai2', sai2, '--config-file', localconf]), main_task_cls=BWA.BwaSampe)
 
-    def test_samtobam(self):
-        luigi.run(_luigi_args(['--sam', sam, '--indir', indir, '--parent-task', 'pm.luigi.bwa.BwaSampe']), main_task_cls=SAM.SamToBam)
-
+    # Also fails; depends on InputSamFile, which only exists if
+    # BWA.BwaSampe has been run. See below for putting different
+    # modules together.
     def test_sortbam(self):
-        luigi.run(_luigi_args(['--bam', bam, '--indir', indir]), main_task_cls=SAM.SortBam)
+        luigi.run(_luigi_args(['--bam', bam]), main_task_cls=SAM.SortBam)
 
     def test_picard_sortbam(self):
-        luigi.run(_luigi_args(['--bam', bam, '--indir', indir]), main_task_cls=PICARD.SortSam)
+        luigi.run(_luigi_args(['--bam', bam]), main_task_cls=PICARD.SortSam)
 
     def test_picard_alignmentmetrics(self):
         luigi.run(_luigi_args(['--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref)]), main_task_cls=PICARD.AlignmentMetrics)
@@ -78,23 +95,18 @@ class TestLuigiWrappers(unittest.TestCase):
         luigi.run(_luigi_args(['--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref)]), main_task_cls=PICARD.InsertMetrics)
 
     def test_picard_dupmetrics(self):
-        if os.path.exists(sortbam.replace(".bam", ".dup_metrics")):
-            os.unlink(sortbam.replace(".bam", ".dup_metrics"))
         luigi.run(_luigi_args(['--bam', sortbam]), main_task_cls=PICARD.DuplicationMetrics)
 
-    def test_picard_dupmetrics_altconfig(self):
-        if os.path.exists(sortbam.replace(".bam", ".dup_metrics")):
-            os.unlink(sortbam.replace(".bam", ".dup_metrics"))
-        luigi.run(_luigi_args(['--bam', sortbam, '--config', os.path.join(os.getenv("HOME"), ".pm2", "jobconfig2.yaml")]), main_task_cls=PICARD.DuplicationMetrics)
+    def test_picard_hsmetrics(self):
+        luigi.run(_luigi_args(['--bam', sortbam, '--config', localconf]), main_task_cls=PICARD.HsMetrics)
 
     def test_gatk_ug(self):
-        if os.path.exists(sortbam.replace(".bam", ".dup_metrics")):
-            os.unlink(sortbam.replace(".bam", ".dup_metrics"))
         luigi.run(_luigi_args(['--bam', sortbam]), main_task_cls=GATK.UnifiedGenotyper)
 
     def test_picard_metrics(self):
-        luigi.run(_luigi_args(['--bam', bam, '--config', 'pipeconf.yaml']), main_task_cls=PICARD.PicardMetrics)
-        
+        luigi.run(_luigi_args(['--bam', sortbam, '--config', localconf]), main_task_cls=PICARD.PicardMetrics)
+
+@unittest.skipIf(not has_ngstestdata, ngsloadmsg)        
 class TestLuigiParallel(unittest.TestCase):
     def test_bwa_samples(self):
         pass
@@ -146,13 +158,7 @@ class SampeToSamtools(SAM.SamToBam):
         return BWA.BwaSampe(sai1=os.path.join(self.sam.replace(".sam", BWA.BwaSampe().read1_suffix + ".sai")),
                             sai2=os.path.join(self.sam.replace(".sam", BWA.BwaSampe().read2_suffix + ".sai")))
 
-# class BwaToPicard(PICARD.BamFile):
-#     def requires(self):
-#         return BWA.BwaSampe(sai1=os.path.join(self.sam.replace(".sam", BWA.BwaSampe().read1_suffix + ".sai")),
-#                             sai2=os.path.join(self.sam.replace(".sam", BWA.BwaSampe().read2_suffix + ".sai")))
-        
-#     parent_task = "pm.luigi.bwa.Sampe"
-
+@unittest.skipIf(not has_ngstestdata, ngsloadmsg)
 class TestLuigiPipelines(unittest.TestCase):
     def test_sampe_to_samtools(self):
         luigi.run(_luigi_args(['--sam', sam, '--indir', indir]), main_task_cls=SampeToSamtools)

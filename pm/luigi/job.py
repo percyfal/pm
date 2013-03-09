@@ -66,7 +66,6 @@ class DefaultShellJobRunner(JobRunner):
 
         logger.info(' '.join(arglist))
         (stdout, stderr, returncode) = shell.exec_cmd(' '.join(arglist), shell=True)
-
         if returncode == 0:
             logger.info("Shell job completed")
             for a, b in tmp_files:
@@ -112,7 +111,8 @@ class BaseJobTask(luigi.Task):
                 kwargs[key] = new_value
                 logger.info("Reading config section, setting {0} to {1}".format(key, new_value))
             else:
-                logger.debug("Using default value for {0}".format(key))
+                pass
+            #logger.debug("Using default value for {0}".format(key))
         return kwargs
 
     def exe(self):

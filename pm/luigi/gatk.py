@@ -54,7 +54,7 @@ class InputBamFile(JobTask):
         cls = self.set_parent_task()
         return cls(bam=self.bam)
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input()).fn)
+        return luigi.LocalTarget(os.path.abspath(self.input().fn))
     
 class GATKJobTask(JobTask):
     _config_section = "gatk"
@@ -148,7 +148,6 @@ class BaseRecalibrator(GATKJobTask):
     
     def args(self):
         return ["-I", self.input(), "-o", self.output()]
-
         
 class UnifiedGenotyper(GATKJobTask):
     _config_subsection = "unifiedgenotyper"
@@ -168,6 +167,7 @@ class UnifiedGenotyper(GATKJobTask):
         return "UnifiedGenotyper"
 
     def output(self):
+        print self.input()
         return luigi.LocalTarget(os.path.abspath(self.input()[0].fn).replace(".bam", ".vcf"))
 
     def args(self):

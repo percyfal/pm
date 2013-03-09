@@ -15,7 +15,7 @@ class InputSamFile(JobTask):
     _config_section = "samtools"
     _config_subsection = "input_sam_file"
     sam = luigi.Parameter(default=None)
-    parent_task = "pm.luigi.external.SamFile"
+    parent_task = luigi.Parameter(default="pm.luigi.external.SamFile")
 
     def requires(self):
         cls = self.set_parent_task()
@@ -27,14 +27,14 @@ class InputBamFile(JobTask):
     """Wrapper task that serves as entry point for samtools tasks that take bam file as input"""
     _config_section = "samtools"
     _config_subsection = "input_bam_file"
-    sam = luigi.Parameter(default=None)
-    parent_task = "pm.luigi.external.BamFile"
+    bam = luigi.Parameter(default=None)
+    parent_task = luigi.Parameter(default="pm.luigi.external.BamFile")
 
     def requires(self):
         cls = self.set_parent_task()
-        return cls(sam=self.sam)
+        return cls(bam=self.bam)
     def output(self):
-        return luigi.LocalTarget(self.sam)
+        return luigi.LocalTarget(self.bam)
     
 class SamtoolsJobTask(JobTask):
     """Main samtools job task"""
@@ -72,6 +72,7 @@ class SamToBam(SamtoolsJobTask):
     _config_subsection = "samtobam"
     options = luigi.Parameter(default="-bSh")
     parent_task = luigi.Parameter(default="pm.luigi.samtools.InputSamFile")
+    sam = luigi.Parameter(default=None)
 
     def main(self):
         return "view"
@@ -81,6 +82,8 @@ class SamToBam(SamtoolsJobTask):
         return cls(sam=self.sam)
 
     def output(self):
+        if self.bam:
+            self.sam = self.bam.replace(".bam", ".sam")
         return luigi.LocalTarget(os.path.abspath(self.sam).replace(".sam", ".bam"))
 
     def args(self):
@@ -94,7 +97,7 @@ class SortBam(SamtoolsJobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        return [SamToBam(sam=os.path.abspath(self.bam).replace(".bam", ".sam"))]
+        return SamToBam(sam=os.path.abspath(self.bam).replace(".bam", ".sam"))
 
     def output(self):
         return luigi.LocalTarget(os.path.abspath(self.bam).replace(".bam", ".sort.bam"))

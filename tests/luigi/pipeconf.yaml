@@ -5,6 +5,10 @@ bwa:
   input_fastq_file:
     parent_task: pm.luigi.fastq.FastqFileLink
 
+fastq:
+  link:
+    indir: ~/opt/ngs_test_data/ngstestdata/../data/projects/J.Doe_00_01/P001_101_index3/121015_BB002BBBXX
+
 gatk:
   unifiedgenotyper:
     ref: ~/opt/ngs_test_data/ngstestdata/../data/genomes/Hsapiens/hg19/seq/chr11.fa
@@ -13,7 +17,9 @@ picard:
   # input_bam_file "pipes" input from other modules
   input_bam_file:
     parent_task: pm.luigi.samtools.SamToBam
-
+  hs_metrics:
+    targets: targets.interval_list
+    baits: targets.interval_list
 samtools:
   samtobam:
     parent_task: tests.luigi.test_wrapper.SampeToSamtools

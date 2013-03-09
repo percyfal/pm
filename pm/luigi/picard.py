@@ -73,6 +73,8 @@ class PicardJobTask(JobTask):
         return PicardJobRunner()
 
     def requires(self):
+        print "in requires"
+        print "have bam file {}".format(self.bam)
         cls = self.set_parent_task()
         return cls(bam=self.bam)
 
@@ -121,8 +123,8 @@ class DuplicationMetrics(PicardJobTask):
     def jar(self):
         return "MarkDuplicates.jar"
     def output(self):
-        return [luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".dup.bam")), 
-                luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".dup_metrics"))]
+        return [luigi.LocalTarget(os.path.abspath(self.bam).replace(".bam", ".dup.bam")), 
+                luigi.LocalTarget(os.path.abspath(self.bam).replace(".bam", ".dup_metrics"))]
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()[0], "METRICS_FILE=", self.output()[1]]
 
@@ -138,7 +140,7 @@ class HsMetrics(PicardJobTask):
     def output(self):
         return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".hs_metrics"))
     def args(self):
-        return ["INPUT=", self.input(), "OUTPUT=", self.output(), "BAIT_INTERVALS_FILE=", self.baits, "TARGET_INTERVALS=", self.targets]
+        return ["INPUT=", self.input(), "OUTPUT=", self.output(), "BAIT_INTERVALS=", self.baits, "TARGET_INTERVALS=", self.targets]
 
 class PicardMetrics(luigi.WrapperTask):
     bam = luigi.Parameter(default=None)
