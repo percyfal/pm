@@ -1,0 +1,14 @@
+# section parameter values either affect the exe application or
+# correspond to global application parameters
+bwa:
+  bwaref: ~/opt/ngs_test_data/ngstestdata/../data/genomes/Hsapiens/hg19/bwa/chr11.fa
+gatk:
+  unifiedgenotyper:
+    ref: ~/opt/ngs_test_data/ngstestdata/../data/genomes/Hsapiens/hg19/seq/chr11.fa
+picard:
+  # input_bam_file "pipes" input from other modules
+  input_bam_file:
+    parent_task: pm.luigi.samtools.SamToBam
+samtools:
+  samtobam:
+    parent_task: tests.luigi.test_wrapper.SampeToSamtools

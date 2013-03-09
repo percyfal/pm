@@ -53,6 +53,7 @@ class BwaSampe(BwaJobTask):
     # Get these with static methods
     read1_suffix = luigi.Parameter(default="_R1_001")
     read2_suffix = luigi.Parameter(default="_R2_001")
+    read_group = luigi.Parameter(default=None)
 
     def main(self):
         return "sampe"
@@ -69,5 +70,8 @@ class BwaSampe(BwaJobTask):
         sai2 = self.input()[1]
         fastq1 = luigi.LocalTarget(sai1.fn.replace(".sai", ".fastq.gz"))
         fastq2 = luigi.LocalTarget(sai2.fn.replace(".sai", ".fastq.gz"))
-        return [self.bwaref, sai1, sai2, fastq1, fastq2, ">", self.output()]
+        if not self.read_group:
+            foo = sai1.fn.replace(".sai", "")
+            self.read_group = "-r \"{}\"".format("\t".join(["@RG", "ID:{}".format(foo), "SM:{}".format(foo)]))
+        return [self.read_group, self.bwaref, sai1, sai2, fastq1, fastq2, ">", self.output()]
 

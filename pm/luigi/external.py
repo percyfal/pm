@@ -13,16 +13,16 @@ class BamFile(luigi.ExternalTask):
     bam = luigi.Parameter(default=None)
 
     def output(self):
-        return luigi.LocalTarget(self.bam)
+        return luigi.LocalTarget(os.path.abspath(self.bam))
 
 class SamFile(luigi.ExternalTask):
     sam = luigi.Parameter(default=None)
 
     def output(self):
-        return luigi.LocalTarget(self.sam)
+        return luigi.LocalTarget(os.path.abspath(self.sam))
     
 class FastqFile(luigi.ExternalTask):
     fastq = luigi.Parameter(default=None)
 
     def output(self):
-        return luigi.LocalTarget(self.fastq)
+        return luigi.LocalTarget(os.path.abspath(self.fastq))

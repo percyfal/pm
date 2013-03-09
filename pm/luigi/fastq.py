@@ -8,6 +8,7 @@ class FastqFileLink(luigi.Task):
     indir = luigi.Parameter(default=os.curdir, is_global=True)
 
     def requires(self):
+        #return pm.luigi.external.FastqFile(fastq=self.fastq)
         return pm.luigi.external.FastqFile(fastq=os.path.join(self.indir, os.path.basename(self.fastq)))
 
     def output(self):

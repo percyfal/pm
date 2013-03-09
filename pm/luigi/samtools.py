@@ -10,13 +10,26 @@ logger = logging.getLogger('luigi-interface')
 class SamtoolsJobRunner(DefaultShellJobRunner):
     pass
 
+class SamFile(luigi.LocalTarget):
+    """Wrapper task that serves as entry point for samtools tasks that take sam file as input"""
+    sam = luigi.Parameter(default=None)
+    def requires(self):
+        return pm.luigi.external.SamFile(sam=self.sam)
+    def output(self):
+        return luigi.LocalTarget(self.sam)
+    
 class SamtoolsJobTask(JobTask):
     """Main samtools job task"""
     _config_section = "samtools"
     sam = luigi.Parameter(default=None)
     bam = luigi.Parameter(default=None)
     samtools = luigi.Parameter(default="samtools")
-    require_cls = luigi.Parameter(default="pm.luigi.external.SamFile")
+    parent_task = luigi.Parameter(default="pm.luigi.external.SamFile")
+
+    def __init__(self, *args, **kwargs):
+        super(SamtoolsJobTask, self).__init__(*args, **kwargs)
+        if self.bam and not self.sam:
+            self.sam = self.bam.replace(".bam", ".sam")
 
     def exe(self):
         """Executable"""
@@ -40,10 +53,14 @@ class SamtoolsJobTask(JobTask):
 class SamToBam(SamtoolsJobTask):
     _config_subsection = "samtobam"
     options = luigi.Parameter(default="-bSh")
-    require_cls = luigi.Parameter(default="pm.luigi.external.SamFile")
+    parent_task = luigi.Parameter(default="pm.luigi.external.SamFile")
 
     def main(self):
         return "view"
+
+    def requires(self):
+        cls = self.set_parent_task()
+        return cls(sam=self.sam)
 
     def output(self):
         return luigi.LocalTarget(os.path.abspath(self.sam).replace(".sam", ".bam"))
@@ -55,9 +72,10 @@ class SortBam(SamtoolsJobTask):
     _config_subsection = "sortbam"
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default=None)
+    parent_task = luigi.Parameter(default="pm.luigi.samtools.SamToBam")
 
     def requires(self):
-        return [SamToBam(sam=self.bam.replace(".bam", ".sam"))]
+        return [SamToBam(sam=os.path.abspath(self.bam).replace(".bam", ".sam"))]
 
     def output(self):
         return luigi.LocalTarget(os.path.abspath(self.bam).replace(".bam", ".sort.bam"))

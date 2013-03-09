@@ -41,16 +41,23 @@ class PicardJobRunner(DefaultShellJobRunner):
         else:
             raise Exception("Job '{}' failed: \n{}".format(cmd.replace("= ", "="), " ".join([stderr])))
 
+class InputBamFile(JobTask):
+    _config_section = "picard"
+    _config_subsection = "input_bam_file"
+    bam = luigi.Parameter(default=None)
+    parent_task = luigi.Parameter(default="pm.luigi.external.BamFile")
+    def requires(self):
+        cls = self.set_parent_task()
+        return cls(bam=self.bam)
+    def output(self):
+        return luigi.LocalTarget(os.path.abspath(self.input().fn))
+    def run(self):
+        pass
+
 class PicardJobTask(JobTask):
     _config_section = "picard"
     java_options = "-Xmx2g"
-    # would want to use class definitions, not strings
-    #require_cls = luigi.Parameter(default=ExternalBamFile)
-    # Basically want to do introspection; see
-    # http://www.blog.pythonlibrary.org/2012/07/31/advanced-python-how-to-dynamically-load-modules-or-classes/
-    # Actually this is a problem with luigi.Parameter: in the config
-    # file this is a string: how instantiate a class?
-    require_cls = luigi.Parameter(default="pm.luigi.external.BamFile")
+    parent_task = luigi.Parameter(default="pm.luigi.picard.InputBamFile")
 
     def jar(self):
         """Path to the jar for this Picard job"""
@@ -66,25 +73,19 @@ class PicardJobTask(JobTask):
         return PicardJobRunner()
 
     def requires(self):
-        """Enumerate all types of cases here; ExternalBamFile,
-        pm.luigi.bwa.BwaSampe, pm.luigi.samtools.SamToBam..."""
-        if self.require_cls == "pm.luigi.external.BamFile":
-            return pm.luigi.external.BamFile(bam=self.bam)
-        else:
-            raise ValueError("No such class '{}'".format(self.require_cls))
-    
+        cls = self.set_parent_task()
+        return cls(bam=self.bam)
 
 class SortSam(PicardJobTask):
     _config_subsection = "sortsam"
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default="SO=coordinate MAX_RECORDS_IN_RAM=750000")
+    parent_task = luigi.Parameter("pm.luigi.picard.InputBamFile")
 
     def jar(self):
         return "SortSam.jar"
-
     def output(self):
         return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".sort.bam"))
-
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()]
 
@@ -95,9 +96,8 @@ class AlignmentMetrics(PicardJobTask):
     
     def jar(self):
         return "CollectAlignmentSummaryMetrics.jar"
-    def requires(self):
-        return ExternalBamFile(bam=self.bam)
     def output(self):
+        print "Alignment input " + str(self.input())
         return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".align_metrics"))
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()]
@@ -109,8 +109,6 @@ class InsertMetrics(PicardJobTask):
     
     def jar(self):
         return "CollectInsertSizeMetrics.jar"
-    def requires(self):
-        return ExternalBamFile(bam=self.bam)
     def output(self):
         return [luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".insert_metrics")), 
                 luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".insert_hist"))]
@@ -124,8 +122,6 @@ class DuplicationMetrics(PicardJobTask):
 
     def jar(self):
         return "MarkDuplicates.jar"
-    def requires(self):
-        return SortSam(bam=self.bam.replace(".sort", ""))
     def output(self):
         return [luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".dup.bam")), 
                 luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".dup_metrics"))]
@@ -141,9 +137,13 @@ class HsMetrics(PicardJobTask):
     
     def jar(self):
         return "CalculateHsMetrics.jar"
-    def requires(self):
-        return ExternalBamFile(bam=self.bam)
     def output(self):
         return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".hs_metrics"))
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output(), "BAIT_INTERVALS_FILE=", self.baits, "TARGET_INTERVALS=", self.targets]
+
+class PicardMetrics(luigi.WrapperTask):
+    bam = luigi.Parameter(default=None)
+    def requires(self):
+        return [ DuplicationMetrics(bam=self.bam), HsMetrics(bam=self.bam),
+                InsertMetrics(bam=self.bam), AlignmentMetrics(bam=self.bam)]

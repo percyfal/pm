@@ -77,6 +77,7 @@ class DefaultShellJobRunner(JobRunner):
 class BaseJobTask(luigi.Task):
     config_file = luigi.Parameter(is_global=True, default=os.path.join(os.getenv("HOME"), ".pm2", "jobconfig.yaml"))
     options = luigi.Parameter(default=None)
+    parent_task = luigi.Parameter(default=None)
     _config_section = None
     _config_subsection = None
     task_id = None
@@ -165,6 +166,27 @@ class BaseJobTask(luigi.Task):
             if k == key:
                 return value.default
         return None
+
+    def set_parent_task(self):
+        """Try to import a module task class represented as string in
+        parent_task and use it as such
+        """
+        opt_mod = ".".join(self.parent_task.split(".")[0:-1])
+        opt_cls = self.parent_task.split(".")[-1]
+        default_task = self.get_param_default("parent_task")
+        default_mod = ".".join(default_task.split(".")[0:-1])
+        default_cls = default_task.split(".")[-1]
+        print opt_mod, opt_cls
+        print default_mod, default_cls
+        try:
+            mod = __import__(opt_mod, fromlist=[opt_cls])
+            cls = getattr(mod, opt_cls)
+            ret_cls = cls
+        except:
+            logger.warn("No class found: using default class {}".format(".".join([default_mod, default_cls])))
+            ret_mod = __import__(default_mod, fromlist=[default_cls])
+            ret_cls = getattr(ret_mod, default_cls)
+        return ret_cls
 
 class JobTask(BaseJobTask):
     def job_runner(self):
