@@ -18,9 +18,6 @@ class InputFastqFile(JobTask):
         cls = self.set_parent_task()
         return cls(fastq=self.fastq)
     def output(self):
-        print "Parent task in bwa.InputFastqFile: " + str(self.parent_task)
-        print "Input : " + str(os.path.abspath(self.input().fn))
-        print "Fastq parameter " + str(os.path.abspath(self.fastq))
         return luigi.LocalTarget(os.path.abspath(self.input().fn))
     def run(self):
         pass

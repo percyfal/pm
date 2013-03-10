@@ -10,6 +10,7 @@ import pm.luigi.samtools as SAM
 import pm.luigi.fastq as FASTQ
 import pm.luigi.picard as PICARD
 import pm.luigi.gatk as GATK
+import pm.luigi.cutadapt as CUTADAPT
 import pm.luigi.external
 # Check for ngstestdata
 ngsloadmsg = "No ngstestdata module; skipping test. Do a 'git clone https://github.com/percyfal/ngs.test.data' followed by 'python setup.py install'"
@@ -111,6 +112,10 @@ class TestLuigiWrappers(unittest.TestCase):
     def test_picard_metrics(self):
         _make_file_links()
         luigi.run(_luigi_args(['--bam', sortbam, '--config-file', localconf]), main_task_cls=PICARD.PicardMetrics)
+
+    def test_cutadapt(self):
+        _make_file_links()
+        luigi.run(_luigi_args(['--fastq', os.path.basename(fastq1), '--config-file', localconf]), main_task_cls=CUTADAPT.CutadaptJobTask)
 
 @unittest.skipIf(not has_ngstestdata, ngsloadmsg)        
 class TestLuigiParallel(unittest.TestCase):

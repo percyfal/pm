@@ -87,12 +87,10 @@ the tests:
 
 	PYTHONPATH=. nosetests -v -s test_wrapper.py
 	
-## Examples ##
+## Examples in tests ##
 
-NB: the examples are currently based on the tests in
-[pm.tests.luigi.test_wrapper](https://github.com/percyfal/pm/blob/feature/luigi-tasks/tests/luigi/test_wrapper.py)
-and a couple of example scripts in
-[pm.luigi.examples](https://github.com/percyfal/pm/blob/feature/luigi-tasks/tests/luigi/test_wrapper.py)
+These examples are currently based on the tests in
+[pm.tests.luigi.test_wrapper](https://github.com/percyfal/pm/blob/feature/luigi-tasks/tests/luigi/test_wrapper.py).
 
 ### Creating file links ###
 
@@ -186,9 +184,70 @@ This is necessary as there is no default method to go from bam to sai.
 Future implementations should possibly include commong 'module
 connecting tasks' as these.
 	
-### More examples with parent tasks and configuration files ###
+## Example scripts  ##
 
-There are a couple of examples 
+There are also a couple of example scripts in
+[pm.luigi.examples](https://github.com/percyfal/pm/tree/feature/luigi-tasks/pm/luigi/examples).
+The following examples show how to modify behaviour with configuration
+files and custom classes. Note that currently you'll need to modify
+the reference paths in the config files manually to point to the
+*ngs_test_data* installation. The test data consists of two samples,
+one of which (P001_101) has data from two flowcell runs.
+
+The basic configuration setting is 
+
+    bwa:
+      bwaref: ../../../../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
+    
+    gatk:
+      unifiedgenotyper:
+        ref: ../../../../ngs_test_data/data/genomes/Hsapiens/hg19/seq/chr11.fa
+    
+    picard:
+      # input_bam_file "pipes" input from other modules
+      input_bam_file:
+        parent_task: pm.luigi.samtools.SamToBam
+      hs_metrics:
+        parent_task: pm.luigi.picard.SortSam
+        targets: ../../../tests/luigi/targets.interval_list
+        baits: ../../../tests/luigi/targets.interval_list
+      duplication_metrics:
+        parent_task: pm.luigi.picard.SortSam
+      alignment_metrics:
+        parent_task: pm.luigi.picard.SortSam
+      insert_metrics:
+        parent_task: pm.luigi.picard.SortSam
+    
+    samtools:
+      samtobam:
+        parent_task: pm.luigi.samtools.SampeToSamtools
+
+
+### Basic align seqcap pipeline ###
+
+In examples directory, running
+
+	python pipeline.py  --project J.Doe_00_01 --indir path/to/ngs_test_data/data/projects --config-file align_seqcap.yaml
+	
+will execute a basic analysis pipeline:
+
+![AlignSeqcap](https://raw.github.com/percyfal/pm/feature/luigi-tasks/pm/luigi/doc/example_align_seqcap.png)
+
+### Adding adapter trimming  ###
+
+Changing the following configuration section (see `align_adapter_trim_seqcap.yaml`):
+
+	bwa:
+	  aln:
+        parent_task: pm.luigi.cutadapt.CutadaptJobTask
+
+and running 
+
+	python pipeline.py  --project J.Doe_00_01 --indir ../../../../ngs_test_data/data/projects --config-file align_adapter_trim_seqcap.yaml
+	
+runs the same pipeline as before, but on adapter-trimmed data.
+
+
 
 ## Implementation ##
 
@@ -274,6 +333,8 @@ environment.
   input parameter generation for tasks that are run several times on
   files with different suffixes.
 
+* Speaking of file suffixes, currently assume all fastq files are
+  gzipped
 
 * Configuration issues:
 
