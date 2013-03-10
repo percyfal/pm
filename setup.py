@@ -23,6 +23,8 @@ setup(name = "pm",
         "logbook >= 0.4",
         "pandas >= 0.9",
         "biopython",
+        "luigi",
+        "nose"
         ],
       test_suite = 'nose.collector',
       packages=find_packages(exclude=['tests']),

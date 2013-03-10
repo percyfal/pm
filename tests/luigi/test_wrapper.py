@@ -71,6 +71,10 @@ class TestLuigiWrappers(unittest.TestCase):
         luigi.run(_luigi_args(['--fastq', fastq1]), main_task_cls=FASTQ.FastqFileLink)
 
     def test_bwaaln(self):
+        if not os.path.exists(os.path.basename(fastq1)):
+            os.symlink(fastq1, os.path.basename(fastq1))
+        if not os.path.exists(os.path.basename(fastq2)):
+            os.symlink(fastq2, os.path.basename(fastq2))
         luigi.run(_luigi_args(['--fastq', fastq1, '--config-file', localconf]), main_task_cls=BWA.BwaAln)
         luigi.run(_luigi_args(['--fastq', fastq2, '--config-file', localconf]), main_task_cls=BWA.BwaAln)
 
