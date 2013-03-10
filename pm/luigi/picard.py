@@ -2,6 +2,7 @@ import os
 import luigi
 import logging
 import time
+import glob
 import pm.luigi.external
 from pm.luigi.job import JobTask, DefaultShellJobRunner
 from cement.utils import shell
@@ -89,10 +90,41 @@ class SortSam(PicardJobTask):
         cls = self.set_parent_task()
         return cls(bam=self.bam.replace("{}.bam".format(self.label), ".bam"))
     def output(self):
-        return luigi.LocalTarget(os.path.relpath(self.input().fn).replace(".bam", ".sort.bam"))
+        return luigi.LocalTarget(os.path.relpath(self.input().fn).replace(".bam", "{}.bam".format(self.label)))
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()]
 
+class MergeSamFiles(PicardJobTask):
+    _config_subsection = "merge_sam_files"
+    # bam is the target, i.e. is *one* file
+    bam = luigi.Parameter(default=None)
+    sample = luigi.Parameter(default=None)
+    label = luigi.Parameter(default=".merge")
+    read1_suffix = luigi.Parameter(default="_R1_001")
+    # FIXME: TMP_DIR should not be hard-coded
+    options = luigi.Parameter(default="SO=coordinate TMP_DIR=./tmp")
+    def jar(self):
+        return "MergeSamFiles.jar"
+    def requires(self):
+        cls = self.set_parent_task()
+        bam_list = self.organize_sample_runs(cls)
+        return [cls(bam=x.replace("{}.bam".format(self.label), ".bam")) for x in bam_list]
+    def output(self):
+        fn = self.input()[0].fn
+        return luigi.LocalTarget(os.path.join(os.path.dirname(os.path.relpath(fn)), os.pardir, os.path.basename(fn)).replace(".bam", "{}.bam".format(self.label)))
+    def args(self):
+        return ["OUTPUT=", self.output()] + [item for sublist in [["INPUT=", x] for x in self.input()] for item in sublist]
+    def organize_sample_runs(self, cls):
+        # This currently relies on the folder structure sample/fc1,
+        # sample/fc2 etc... This should possibly also be a
+        # configurable function?
+        flowcells = os.listdir(os.path.dirname(self.bam))
+        bam_list = []
+        for fc in flowcells:
+            sample_runs = list(set([x.replace(".fastq.gz", "").replace(self.read1_suffix, "") for x in glob.glob(os.path.join(os.path.dirname(self.bam), fc, "*{}.fastq.gz".format(self.read1_suffix)))]))
+            bam_list.extend(["{}{}.bam".format(x, cls().label) for x in sample_runs])
+        return bam_list
+    
 class AlignmentMetrics(PicardJobTask):
     _config_subsection = "alignment_metrics"
     bam = luigi.Parameter(default=None)

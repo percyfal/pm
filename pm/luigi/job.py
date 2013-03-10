@@ -84,6 +84,9 @@ class BaseJobTask(luigi.Task):
     options = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default=None)
     num_threads = luigi.Parameter(default=1)
+    # Needed for merging samples; list of tuples (sample, sample_run)
+    # sample_runs = luigi.Parameter(default=[], is_global=True)
+    sample_runs = []
     _config_section = None
     _config_subsection = None
     task_id = None

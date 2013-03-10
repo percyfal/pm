@@ -34,8 +34,10 @@ if has_ngstestdata:
     sample = "P001_101_index3_TGACCA_L001"
     fastq1 = os.path.join(indir, sample + "_R1_001.fastq.gz")
     fastq2 = os.path.join(indir, sample + "_R2_001.fastq.gz")
+
     sai1 = os.path.join(sample + "_R1_001.sai")
     sai2 = os.path.join(sample + "_R2_001.sai")
+
     sam = os.path.join(sample + ".sam")
     bam = os.path.join(sample + ".bam")
     sortbam = os.path.join(sample + ".sort.bam")

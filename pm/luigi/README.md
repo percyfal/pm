@@ -247,7 +247,17 @@ and running
 	
 runs the same pipeline as before, but on adapter-trimmed data.
 
+### Merging samples over several runs ###
 
+Sample *P001_101_index3* has data from two separate runs that should
+be merged. The class `pm.luigi.picard.MergeSamFiles` merges sample_run
+files and places the result in the sample directory. The
+implementation currently depends on the directory structure
+'sample/fc1', sample/fc2' etc.
+
+	python pipeline_merge.py  --project J.Doe_00_01 --indir ../../../../ngs_test_data/data/projects --config-file align_seqcap_merge.yaml  --sample P001_101_index3
+
+See `align_seqcap_merge.yaml` for relevant changes.
 
 ## Implementation ##
 
