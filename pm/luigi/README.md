@@ -44,7 +44,9 @@ The tests depend on the following software to run:
 3. [GATK](http://www.broadinstitute.org/gatk/) - set an environment
    variable `GATK_HOME` to point to your installation path
 4. [picard](http://picard.sourceforge.net/) - set an environment
-   variabl `PICARD_HOME` to point to your installation path
+   variable `PICARD_HOME` to point to your installation path
+5. [cutadapt](http://code.google.com/p/cutadapt/) - install with `pip
+   install cutadapt`
 
 You also need to install the test data set:
 
