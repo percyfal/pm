@@ -104,8 +104,8 @@ machine).
 
 	nosetests -v -s test_fastqln.py
 
-![FastqLn](https://github.com/percyfal/pm/tree/feature/luigi-tasks/pm/luigi/doc/test_fastqln.png)
-	
+![FastqLn](https://raw.github.com/percyfal/pm/feature/luigi-tasks/pm/luigi/doc/test_fastqln.png)
+	       
 	
 ### Alignment with bwa ###
 
