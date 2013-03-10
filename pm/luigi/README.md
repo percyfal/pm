@@ -362,10 +362,10 @@ environment.
   are two dependencies that should removed and implemented in the
   separate module:
   
-  1. YAML configuration parser (currently in
-     [pm.ext.ext_yamlconfigparser.py](https://github.com/percyfal/pm/blob/feature/luigi-tasks/pm/ext/ext_yamlconfigparser.py))
-  2. shell commands are wrapped with
-     [shell.exec_cmd](https://github.com/cement/cement/blob/master/cement/utils/shell.py#L8)
+  - YAML configuration parser (currently in
+	[pm.ext.ext_yamlconfigparser.py](https://github.com/percyfal/pm/blob/feature/luigi-tasks/pm/ext/ext_yamlconfigparser.py))
+  - shell commands are wrapped with
+	[shell.exec_cmd](https://github.com/cement/cement/blob/master/cement/utils/shell.py#L8)
      from the cement package
 
 * DONE? Fix path handling so relative paths can be used (see e.g. run method in
