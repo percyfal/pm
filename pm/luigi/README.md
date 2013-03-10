@@ -130,13 +130,17 @@ expect many changes in near future.
 
 ## Issues  ##
 
-* 
+* Command-line options should override settings in config file
 
 ## TODO/future ideas ##
 
-* Make `pm.luigi` a separete module, independent of `pm`? If so, there
-  are two dependencies that should be implemented in the separate module:
+* Make `pm.luigi` a separate module, independent of `pm`? If so, there
+  are two dependencies that should removed and implemented in the
+  separate module:
   
-  1. YAML configuration parser (currently in [pm.ext]
-
+  1. YAML configuration parser (currently in
+     [pm.ext.ext_yamlconfigparser.py](https://github.com/percyfal/pm/blob/feature/luigi-tasks/pm/ext/ext_yamlconfigparser.py))
+  2. shell commands are wrapped with
+     [shell.exec_cmd](https://github.com/cement/cement/blob/master/cement/utils/shell.py#L8)
+     from the cement package
 

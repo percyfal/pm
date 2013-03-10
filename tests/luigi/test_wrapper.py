@@ -68,7 +68,7 @@ class TestLuigiWrappers(unittest.TestCase):
 
     # NB: fastq1 has to be absolute path, otherwise no link is created
     def test_fastqln(self):
-        luigi.run(_luigi_args(['--fastq', fastq1]), main_task_cls=FASTQ.FastqFileLink)
+        luigi.run(_luigi_args(['--fastq', fastq1, '--config-file', localconf]), main_task_cls=FASTQ.FastqFileLink)
 
     def test_bwaaln(self):
         if not os.path.exists(os.path.basename(fastq1)):
@@ -87,28 +87,28 @@ class TestLuigiWrappers(unittest.TestCase):
     # BWA.BwaSampe has been run. See below for putting different
     # modules together.
     def test_sortbam(self):
-        luigi.run(_luigi_args(['--bam', bam]), main_task_cls=SAM.SortBam)
+        luigi.run(_luigi_args(['--bam', bam, '--config-file', localconf]), main_task_cls=SAM.SortBam)
 
     def test_picard_sortbam(self):
-        luigi.run(_luigi_args(['--bam', bam]), main_task_cls=PICARD.SortSam)
+        luigi.run(_luigi_args(['--bam', bam, '--config-file', localconf]), main_task_cls=PICARD.SortSam)
 
     def test_picard_alignmentmetrics(self):
-        luigi.run(_luigi_args(['--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref)]), main_task_cls=PICARD.AlignmentMetrics)
+        luigi.run(_luigi_args(['--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref), '--config-file', localconf]), main_task_cls=PICARD.AlignmentMetrics)
 
     def test_picard_insertmetrics(self):
-        luigi.run(_luigi_args(['--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref)]), main_task_cls=PICARD.InsertMetrics)
+        luigi.run(_luigi_args(['--bam', bam,'--options', 'REFERENCE_SEQUENCE={}'.format(bwaseqref), '--config-file', localconf]), main_task_cls=PICARD.InsertMetrics)
 
     def test_picard_dupmetrics(self):
-        luigi.run(_luigi_args(['--bam', sortbam]), main_task_cls=PICARD.DuplicationMetrics)
+        luigi.run(_luigi_args(['--bam', sortbam, '--config-file', localconf]), main_task_cls=PICARD.DuplicationMetrics)
 
     def test_picard_hsmetrics(self):
-        luigi.run(_luigi_args(['--bam', sortbam, '--config', localconf]), main_task_cls=PICARD.HsMetrics)
+        luigi.run(_luigi_args(['--bam', sortbam, '--config-file', localconf]), main_task_cls=PICARD.HsMetrics)
 
     def test_gatk_ug(self):
-        luigi.run(_luigi_args(['--bam', sortbam]), main_task_cls=GATK.UnifiedGenotyper)
+        luigi.run(_luigi_args(['--bam', sortbam, '--config-file', localconf]), main_task_cls=GATK.UnifiedGenotyper)
 
     def test_picard_metrics(self):
-        luigi.run(_luigi_args(['--bam', sortbam, '--config', localconf]), main_task_cls=PICARD.PicardMetrics)
+        luigi.run(_luigi_args(['--bam', sortbam, '--config-file', localconf]), main_task_cls=PICARD.PicardMetrics)
 
 @unittest.skipIf(not has_ngstestdata, ngsloadmsg)        
 class TestLuigiParallel(unittest.TestCase):
@@ -154,7 +154,7 @@ class TestLuigiParallel(unittest.TestCase):
                 
             def output(self):
                 return luigi.LocalTarget("tabort.txt")
-        luigi.run(_luigi_args(['--samples', "P001_101_index3", '--indir', projectdir]), main_task_cls=BwaAlnSamples)
+        luigi.run(_luigi_args(['--samples', "P001_101_index3", '--config-file', localconf]), main_task_cls=BwaAlnSamples)
         
 
 class SampeToSamtools(SAM.SamToBam):
@@ -165,10 +165,10 @@ class SampeToSamtools(SAM.SamToBam):
 @unittest.skipIf(not has_ngstestdata, ngsloadmsg)
 class TestLuigiPipelines(unittest.TestCase):
     def test_sampe_to_samtools(self):
-        luigi.run(_luigi_args(['--sam', sam, '--indir', indir]), main_task_cls=SampeToSamtools)
+        luigi.run(_luigi_args(['--sam', sam, '--config-file', localconf]), main_task_cls=SampeToSamtools)
 
     def test_sampe_to_samtools_sort(self):
-        luigi.run(_luigi_args(['--bam', bam, '--indir', indir, '--config-file', 'pipeconf.yaml']), main_task_cls=SAM.SortBam)
+        luigi.run(_luigi_args(['--bam', bam, '--indir', indir, '--config-file', localconf]), main_task_cls=SAM.SortBam)
 
     def test_sampe_to_picard_sort(self):
-        luigi.run(_luigi_args(['--bam', bam, '--indir', indir, '--config-file', 'pipeconf.yaml']), main_task_cls=PICARD.SortSam)
+        luigi.run(_luigi_args(['--bam', bam, '--indir', indir, '--config-file', localconf]), main_task_cls=PICARD.SortSam)
