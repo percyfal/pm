@@ -73,8 +73,6 @@ class PicardJobTask(JobTask):
         return PicardJobRunner()
 
     def requires(self):
-        print "in requires"
-        print "have bam file {}".format(self.bam)
         cls = self.set_parent_task()
         return cls(bam=self.bam)
 
@@ -125,6 +123,9 @@ class DuplicationMetrics(PicardJobTask):
 
     def jar(self):
         return "MarkDuplicates.jar"
+    def requires(self):
+        cls = self.set_parent_task()
+        return cls(bam=self.bam.replace(".dup.bam", ".bam"))
     def output(self):
         return [luigi.LocalTarget(os.path.relpath(self.bam).replace(".bam", ".dup.bam")), 
                 luigi.LocalTarget(os.path.relpath(self.bam).replace(".bam", ".dup_metrics"))]

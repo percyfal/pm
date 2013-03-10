@@ -63,14 +63,19 @@ class DefaultShellJobRunner(JobRunner):
         (tmp_files, job_args) = DefaultShellJobRunner._fix_paths(job)
         
         arglist += job_args
+        cmd = ' '.join(arglist)
 
-        logger.info(' '.join(arglist))
-        (stdout, stderr, returncode) = shell.exec_cmd(' '.join(arglist), shell=True)
+        logger.info(cmd)
+        (stdout, stderr, returncode) = shell.exec_cmd(cmd, shell=True)
         if returncode == 0:
             logger.info("Shell job completed")
             for a, b in tmp_files:
                 logger.info("renaming {0} to {1}".format(a.path, b.path))
-                a.move(b.path)
+                # This is weird; using the example in luigi
+                # (a.move(b)) doesn't work, and using just b.path
+                # fails unless it contains a directory (e.g. './file'
+                # works, 'file' doesn't)
+                a.move(os.path.join(os.curdir, b.path))
         else:
             raise Exception("Job '{}' failed: \n{}".format(' '.join(arglist), " ".join([stderr])))
                 

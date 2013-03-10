@@ -185,6 +185,9 @@ Future implementations should possibly include commong 'module
 connecting tasks' as these.
 	
 
+
+### More examples with parent tasks and configuration files ###
+
 ## Implementation ##
 
 The implementation is still under heavy development and testing so
@@ -192,21 +195,92 @@ expect many changes in near future.
 
 ### Basic job task ###
 
+`pm.luigi.job` defines, among other things, a *default shell job
+runner*, which is a wrapper for running tasks in shell, and a *base
+job task* that subclasses `luigi.Task`. The base job task implements a
+couple of functions that are essential for general behaviour:
+
+* `_update_config` that reads the configuration file and overrides
+  default settings. It is run from `__init__`, meaning that it is read
+  for *every task* (see issues)
+  
+* `set_parent_task` that sets the parent task for a task. The function
+  parses a string (`module.class`) and tries to load `class` from
+  `module`, falling back to the default parent task on failure. Here
+  it would be nice to implement validation of the parent task in some
+  way (via interface classes?)
+  
+* `set_parent_task_list` that sets a parent task list. Not sure if
+  this is the right way to go; the motivation stems from the fact that
+  if a task is to be run on several targets (e.g. UnifiedGenotyper on
+  sample.bam, sample.clip.bam) the task would only depend on the first
+  file. EDIT: or would it? This is probably more related to giving the
+  task the correct file name, so this configuration option should
+  probably provide a list of 2-tuples of from,to string substitutions.
 
 ### Program modules ###
 
-`pm.luigi` submodules are named after the application/ 
+`pm.luigi` submodules are named after the application/program to be
+run (e.g. `pm.luigi.bwa` for `bwa`). For consistency, the modules
+shoud contain
+
+1. a **job runner** that subclasses
+   `pm.luigi.job.DefaultShellJobRunner`. The runner specifies how the
+   program is run
+   
+2. **input** file task(s) that subclass `pm.luigi.job.JobTask` and
+   that depend on external tasks in `pm.luigi.external`. The idea is
+   that all acceptable file formats be defined as external inputs, and
+   that parent tasks therefore must use one/any of these inputs
+   
+3. a **main job task** that subclasses `pm.luigi.job.JobTask` and has
+   as default parent task one of the inputs (previous point). The
+   `_config_section` should be set to the module name (e.g. `bwa` for
+   `pm.luigi.bwa`). It should also return the *job runner* defined in 1.
+   
+4. **tasks** that subclass the *main job task*. The
+   `_config_subsection` should represent the task name in some way
+   (e.g. `aln` for `bwa aln`command)
 
 ### Configuration parser ###
 
+Python's standard configuration parser works on `.ini` files allowing
+section levels followed by customizations. It would be nice with at
+least sections/subsections (python's `ConfigObj` does this), but I
+prefer yaml files. Previously, I wrote a config parser that subclasses
+an interface from
+[cement.core.config](https://github.com/cement/cement/blob/master/cement/core/config.py).
+It allows sections and subsections in yaml, treating everything below
+that level as lists/dicts/variables. 
 
+## TODO/future ideas/issues ##
 
-## Issues  ##
+NB: many of the issues/ideas are relevant only to our compute
+environment.
 
 * Command-line options should override settings in config file - not
   sure if that currently is the case
 
-## TODO/future ideas ##
+* UPSTREAM? in `pm.luigi.job.DefaultShellJobRunner._fix_paths`,
+  `a.move(b)` doesn't work (I modelled this after
+  [luigi hadoop_jar](https://github.com/spotify/luigi/blob/master/luigi/hadoop_jar.py#L63))
+  
+* Pickling states doesn't currently seem to work?
+
+* File suffixes and string substitutions in file names are hard-coded.
+  Turning substitutions into options would maybe solve the issue of
+  input parameter generation for tasks that are run several times on
+  files with different suffixes
+
+* Configuration issues:
+
+  - Read configuration file on startup, and not for every task as is currently the case
+  - Variable expansion would be nice (e.g. $GATK_HOME) 
+  - Global section for globals, such as num_threads, dbsnp, etc?
+  - Reimplement/rethink configuration parser?
+
+* Instead of `bwaref` etc for setting alignment references, utilise
+  cloudbiolinux/tool-data
 
 * Make `pm.luigi` a separate module, independent of `pm`? If so, there
   are two dependencies that should removed and implemented in the
@@ -224,3 +298,26 @@ expect many changes in near future.
 * Implement class validation of `parent_task`. Currently, any code can
   be used, but it would be nice if the class be validated against the
   parent class, for instance by using interfaces
+
+* Have tasks talk to a central planner so task lists can be easily
+  monitored via a web page
+
+* How control the number of workers/threads in use? An example best
+  explains the issue: alignment with `bwa aln` can be done with
+  multiple threads. `bwa sampe` is single-threaded, and uses ~5.4GB
+  RAM for the human genome. Our current compute cluster has 8-core
+  24GB RAM nodes. One solution would be to run 8 samples per node,
+  running `bwa aln -t 8` sequentially, wrap them with a `WrappedTask`
+  before proceeding with `bwa sampe`, which then should only use 4
+  workers simultaneously. For small samples this is ok. For large
+  samples, one might imagine partitioning the pipeline into an
+  alignment step, in which one sample is run per node, and then
+  grouping the remaining tasks and samples in reasonably sized groups.
+  This latter approach would probably benefit from SLURM/drmaa
+  integration (see following item).
+
+* (Long-term goal?): Integrate with SLURM/drmaa along the lines of
+  [luigi.hadoop](https://github.com/spotify/luigi/blob/master/luigi/hadoop.py)
+  and
+  [luigi.hadoop_jar](https://github.com/spotify/luigi/blob/master/luigi/hadoop_jar.py).
+  Currently using the local scheduler on nodes works well enough

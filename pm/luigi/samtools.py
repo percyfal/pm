@@ -130,3 +130,10 @@ class IndexBam(SamtoolsJobTask):
 
     def args(self):
         return [self.bam, self.output()]
+
+# "Connection" tasks
+import pm.luigi.bwa as bwa
+class SampeToSamtools(SamToBam):
+    def requires(self):
+        return bwa.BwaSampe(sai1=os.path.join(self.sam.replace(".sam", bwa.BwaSampe().read1_suffix + ".sai")),
+                            sai2=os.path.join(self.sam.replace(".sam", bwa.BwaSampe().read2_suffix + ".sai")))
