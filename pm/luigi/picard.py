@@ -57,6 +57,7 @@ class InputBamFile(JobTask):
 class PicardJobTask(JobTask):
     _config_section = "picard"
     java_options = "-Xmx2g"
+    label = luigi.Parameter(default=None)
     parent_task = luigi.Parameter(default="pm.luigi.picard.InputBamFile")
 
     def jar(self):
@@ -80,12 +81,13 @@ class SortSam(PicardJobTask):
     _config_subsection = "sortsam"
     bam = luigi.Parameter(default=None)
     options = luigi.Parameter(default="SO=coordinate MAX_RECORDS_IN_RAM=750000")
+    label = luigi.Parameter(default=".sort")
 
     def jar(self):
         return "SortSam.jar"
     def requires(self):
         cls = self.set_parent_task()
-        return cls(bam=self.bam.replace(".sort.bam", ".bam"))
+        return cls(bam=self.bam.replace("{}.bam".format(self.label), ".bam"))
     def output(self):
         return luigi.LocalTarget(os.path.relpath(self.input().fn).replace(".bam", ".sort.bam"))
     def args(self):
@@ -149,5 +151,5 @@ class HsMetrics(PicardJobTask):
 class PicardMetrics(luigi.WrapperTask):
     bam = luigi.Parameter(default=None)
     def requires(self):
-        return [DuplicationMetrics(bam=self.bam), HsMetrics(bam=self.bam),
+        return [DuplicationMetrics(bam=self.bam.replace(".bam", ".dup.bam")), HsMetrics(bam=self.bam),
                 InsertMetrics(bam=self.bam), AlignmentMetrics(bam=self.bam)]

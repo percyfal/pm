@@ -90,7 +90,9 @@ the tests:
 ## Examples ##
 
 NB: the examples are currently based on the tests in
-[pm.tests.luigi.test_wrapper](https://github.com/percyfal/pm/blob/feature/luigi-tasks/tests/luigi/test_wrapper.py).
+[pm.tests.luigi.test_wrapper](https://github.com/percyfal/pm/blob/feature/luigi-tasks/tests/luigi/test_wrapper.py)
+and a couple of example scripts in
+[pm.luigi.examples](https://github.com/percyfal/pm/blob/feature/luigi-tasks/tests/luigi/test_wrapper.py)
 
 ### Creating file links ###
 
@@ -184,9 +186,9 @@ This is necessary as there is no default method to go from bam to sai.
 Future implementations should possibly include commong 'module
 connecting tasks' as these.
 	
-
-
 ### More examples with parent tasks and configuration files ###
+
+There are a couple of examples 
 
 ## Implementation ##
 
@@ -270,7 +272,8 @@ environment.
 * File suffixes and string substitutions in file names are hard-coded.
   Turning substitutions into options would maybe solve the issue of
   input parameter generation for tasks that are run several times on
-  files with different suffixes
+  files with different suffixes.
+
 
 * Configuration issues:
 

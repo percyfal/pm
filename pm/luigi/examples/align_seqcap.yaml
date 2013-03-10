@@ -13,8 +13,8 @@ picard:
     parent_task: pm.luigi.samtools.SamToBam
   hs_metrics:
     parent_task: pm.luigi.picard.SortSam
-    targets: targets.interval_list
-    baits: targets.interval_list
+    targets: ../../../tests/luigi/targets.interval_list
+    baits: ../../../tests/luigi/targets.interval_list
   duplication_metrics:
     parent_task: pm.luigi.picard.SortSam
   alignment_metrics:
