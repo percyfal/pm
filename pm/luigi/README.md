@@ -90,7 +90,7 @@ the tests:
 ## Examples ##
 
 NB: the examples are currently based on the tests in
-[pm.tests.luigi.test_wrapper](https://github.com/percyfal/pm/blob/feature/luigi-tasks/tests/luigi/test_wrapper.py)
+[pm.tests.luigi.test_wrapper](https://github.com/percyfal/pm/blob/feature/luigi-tasks/tests/luigi/test_wrapper.py).
 
 ### Creating file links ###
 

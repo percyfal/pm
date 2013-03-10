@@ -50,8 +50,12 @@ def _luigi_args(args):
         return [local_scheduler] + args
     return args
 
-
-
+def _make_file_links():
+    if not os.path.exists(os.path.basename(fastq1)):
+        os.symlink(fastq1, os.path.basename(fastq1))
+    if not os.path.exists(os.path.basename(fastq2)):
+        os.symlink(fastq2, os.path.basename(fastq2))
+    
 @unittest.skipIf(not has_ngstestdata, ngsloadmsg)
 class TestLuigiWrappers(unittest.TestCase):
     # @classmethod
@@ -70,16 +74,14 @@ class TestLuigiWrappers(unittest.TestCase):
         luigi.run(_luigi_args(['--fastq', fastq1, '--config-file', localconf]), main_task_cls=FASTQ.FastqFileLink)
 
     def test_bwaaln(self):
-        if not os.path.exists(os.path.basename(fastq1)):
-            os.symlink(fastq1, os.path.basename(fastq1))
-        if not os.path.exists(os.path.basename(fastq2)):
-            os.symlink(fastq2, os.path.basename(fastq2))
+        _make_file_links()
         luigi.run(_luigi_args(['--fastq', fastq1, '--config-file', localconf]), main_task_cls=BWA.BwaAln)
         luigi.run(_luigi_args(['--fastq', fastq2, '--config-file', localconf]), main_task_cls=BWA.BwaAln)
 
     # Will currently fail if links aren't present since it doesn't
-    # know where the links come from (hence parameter indir)
+    # know where the links come from (hence _make_file_links function)
     def test_bwasampe(self):
+        _make_file_links()
         luigi.run(_luigi_args(['--sai1', sai1, '--sai2', sai2, '--config-file', localconf]), main_task_cls=BWA.BwaSampe)
 
     # Also fails; depends on InputSamFile, which only exists if
