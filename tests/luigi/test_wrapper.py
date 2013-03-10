@@ -109,6 +109,7 @@ class TestLuigiWrappers(unittest.TestCase):
         luigi.run(_luigi_args(['--bam', sortbam, '--config-file', localconf]), main_task_cls=GATK.UnifiedGenotyper)
 
     def test_picard_metrics(self):
+        _make_file_links()
         luigi.run(_luigi_args(['--bam', sortbam, '--config-file', localconf]), main_task_cls=PICARD.PicardMetrics)
 
 @unittest.skipIf(not has_ngstestdata, ngsloadmsg)        

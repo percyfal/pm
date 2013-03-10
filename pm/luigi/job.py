@@ -109,7 +109,7 @@ class BaseJobTask(luigi.Task):
                     new_value = config.get(self._config_section, key, self._config_subsection)
             if new_value:
                 kwargs[key] = new_value
-                logger.info("Reading config section, setting {0} to {1}".format(key, new_value))
+                logger.info("Reading config section, setting '{0}' to '{1}' for task class '{2}'".format(key, new_value, self.__class__))
             else:
                 pass
             #logger.debug("Using default value for {0}".format(key))

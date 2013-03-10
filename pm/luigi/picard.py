@@ -37,7 +37,7 @@ class PicardJobRunner(DefaultShellJobRunner):
             logger.info("Shell job completed")
             for a, b in tmp_files:
                 logger.info("renaming {0} to {1}".format(a.path, b.path))
-                a.move(b.path)
+                a.move(os.path.join(os.curdir, b.path))
         else:
             raise Exception("Job '{}' failed: \n{}".format(cmd.replace("= ", "="), " ".join([stderr])))
 
@@ -50,7 +50,7 @@ class InputBamFile(JobTask):
         cls = self.set_parent_task()
         return cls(bam=self.bam)
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input().fn))
+        return luigi.LocalTarget(os.path.relpath(self.input().fn))
     def run(self):
         pass
 
@@ -85,8 +85,11 @@ class SortSam(PicardJobTask):
 
     def jar(self):
         return "SortSam.jar"
+    def requires(self):
+        cls = self.set_parent_task()
+        return cls(bam=self.bam.replace(".sort.bam", ".bam"))
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".sort.bam"))
+        return luigi.LocalTarget(os.path.relpath(self.input().fn).replace(".bam", ".sort.bam"))
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()]
 
@@ -98,7 +101,7 @@ class AlignmentMetrics(PicardJobTask):
     def jar(self):
         return "CollectAlignmentSummaryMetrics.jar"
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".align_metrics"))
+        return luigi.LocalTarget(os.path.relpath(self.input().fn).replace(".bam", ".align_metrics"))
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()]
 
@@ -110,8 +113,8 @@ class InsertMetrics(PicardJobTask):
     def jar(self):
         return "CollectInsertSizeMetrics.jar"
     def output(self):
-        return [luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".insert_metrics")), 
-                luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".insert_hist"))]
+        return [luigi.LocalTarget(os.path.relpath(self.input().fn).replace(".bam", ".insert_metrics")), 
+                luigi.LocalTarget(os.path.relpath(self.input().fn).replace(".bam", ".insert_hist"))]
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()[0], "HISTOGRAM_FILE=", self.output()[1]]
 
@@ -123,8 +126,8 @@ class DuplicationMetrics(PicardJobTask):
     def jar(self):
         return "MarkDuplicates.jar"
     def output(self):
-        return [luigi.LocalTarget(os.path.abspath(self.bam).replace(".bam", ".dup.bam")), 
-                luigi.LocalTarget(os.path.abspath(self.bam).replace(".bam", ".dup_metrics"))]
+        return [luigi.LocalTarget(os.path.relpath(self.bam).replace(".bam", ".dup.bam")), 
+                luigi.LocalTarget(os.path.relpath(self.bam).replace(".bam", ".dup_metrics"))]
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output()[0], "METRICS_FILE=", self.output()[1]]
 
@@ -138,7 +141,7 @@ class HsMetrics(PicardJobTask):
     def jar(self):
         return "CalculateHsMetrics.jar"
     def output(self):
-        return luigi.LocalTarget(os.path.abspath(self.input().fn).replace(".bam", ".hs_metrics"))
+        return luigi.LocalTarget(os.path.relpath(self.input().fn).replace(".bam", ".hs_metrics"))
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output(), "BAIT_INTERVALS=", self.baits, "TARGET_INTERVALS=", self.targets]
 

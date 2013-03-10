@@ -18,8 +18,17 @@ picard:
   input_bam_file:
     parent_task: pm.luigi.samtools.SamToBam
   hs_metrics:
+    parent_task: pm.luigi.picard.SortSam
     targets: targets.interval_list
     baits: targets.interval_list
+  duplication_metrics:
+    parent_task: pm.luigi.picard.SortSam
+  alignment_metrics:
+    parent_task: pm.luigi.picard.SortSam
+  insert_metrics:
+    parent_task: pm.luigi.picard.SortSam
+
+
 samtools:
   samtobam:
     parent_task: tests.luigi.test_wrapper.SampeToSamtools
