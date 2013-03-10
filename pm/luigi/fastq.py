@@ -22,13 +22,14 @@ class FastqFileLink(JobTask):
 
     def requires(self):
         cls = self.set_parent_task()
-        return cls(fastq=os.path.abspath(self.fastq))
+        return cls(fastq=os.path.relpath(self.fastq))
 
     def output(self):
-        return luigi.LocalTarget(os.path.join(os.path.abspath(self.outdir), os.path.basename(self.fastq)))
+        return luigi.LocalTarget(os.path.join(os.path.relpath(self.outdir), os.path.basename(self.fastq)))
 
     def run(self):
-        if not os.path.exists(self.outdir):
-            os.makedirs(self.outdir)
+        # TODO: need to separate handling of paths
+        if not os.path.exists(os.path.relpath(self.outdir)):
+            os.makedirs(os.path.relpath(self.outdir))
         os.symlink(self.input().fn, self.output().fn)
         

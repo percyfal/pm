@@ -33,7 +33,7 @@ from luigi.scheduler import PENDING, DONE, FAILED, RUNNING
 
 class RPCHandler(tornado.web.RequestHandler):
     """ Handle remote scheduling calls using rpc.RemoteSchedulerResponder"""
-    scheduler = scheduler.CentralPlannerScheduler()
+    scheduler = scheduler.CentralPlannerScheduler(remove_delay=30.0)
     api = RemoteSchedulerResponder(scheduler)
 
     def get(self, method):

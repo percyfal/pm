@@ -1,17 +1,17 @@
 # section parameter values either affect the exe application or
 # correspond to global application parameters
 bwa:
-  bwaref: ~/opt/ngs_test_data/ngstestdata/../data/genomes/Hsapiens/hg19/bwa/chr11.fa
+  bwaref: ../data/genomes/Hsapiens/hg19/bwa/chr11.fa
   input_fastq_file:
     parent_task: pm.luigi.fastq.FastqFileLink
 
 fastq:
   link:
-    indir: ~/opt/ngs_test_data/ngstestdata/../data/projects/J.Doe_00_01/P001_101_index3/121015_BB002BBBXX
+    indir: ../data/projects/J.Doe_00_01/P001_101_index3/121015_BB002BBBXX
 
 gatk:
   unifiedgenotyper:
-    ref: ~/opt/ngs_test_data/ngstestdata/../data/genomes/Hsapiens/hg19/seq/chr11.fa
+    ref: ../data/genomes/Hsapiens/hg19/seq/chr11.fa
 
 picard:
   # input_bam_file "pipes" input from other modules

@@ -26,10 +26,10 @@ bwa = "bwa"
 samtools = "samtools"
 
 if has_ngstestdata:
-    bwaref = os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "bwa", "chr11.fa")
-    bwaseqref = os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "seq", "chr11.fa")
-    indir = os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "J.Doe_00_01", "P001_101_index3", "121015_BB002BBBXX")
-    projectdir = os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "J.Doe_00_01")
+    bwaref = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "bwa", "chr11.fa"))
+    bwaseqref = os.path.relpath(os.path.join(ntd.__path__[0], os.pardir, "data", "genomes", "Hsapiens", "hg19", "seq", "chr11.fa"))
+    indir = os.path.relpath(os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "J.Doe_00_01", "P001_101_index3", "121015_BB002BBBXX"))
+    projectdir = os.path.relpath(os.path.join(os.path.dirname(__file__), os.pardir, "data", "projects", "J.Doe_00_01"))
     sample = "P001_101_index3_TGACCA_L001"
     fastq1 = os.path.join(indir, sample + "_R1_001.fastq.gz")
     fastq2 = os.path.join(indir, sample + "_R2_001.fastq.gz")
@@ -66,7 +66,6 @@ class TestLuigiWrappers(unittest.TestCase):
         except:
             pass
 
-    # NB: fastq1 has to be absolute path, otherwise no link is created
     def test_fastqln(self):
         luigi.run(_luigi_args(['--fastq', fastq1, '--config-file', localconf]), main_task_cls=FASTQ.FastqFileLink)
 

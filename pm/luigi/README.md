@@ -144,3 +144,5 @@ expect many changes in near future.
      [shell.exec_cmd](https://github.com/cement/cement/blob/master/cement/utils/shell.py#L8)
      from the cement package
 
+* Fix path handling so relative paths can be used (see e.g. run method in
+  [fastq](https://github.com/percyfal/pm/blob/feature/luigi-tasks/pm/luigi/fastq.py))
