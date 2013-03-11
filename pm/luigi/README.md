@@ -259,7 +259,13 @@ implementation currently depends on the directory structure
 
 	python pipeline_merge.py  --project J.Doe_00_01 --indir ../../../../ngs_test_data/data/projects --config-file align_seqcap_merge.yaml  --sample P001_101_index3
 
-See `align_seqcap_merge.yaml` for relevant changes.
+results in 
+
+![AlignSeqcapMerge](https://raw.github.com/percyfal/pm/feature/luigi-tasks/pm/luigi/doc/example_align_seqcap_merge.png)
+
+See `align_seqcap_merge.yaml` for relevant changes. Note that in this
+implementation the merged files end up directly in the sample
+directory (i.e. *P001_101_index3*).
 
 ### Extending workflows with subclassed tasks ###
 
