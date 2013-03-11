@@ -18,6 +18,7 @@ class JobRunner(object):
     run_job = NotImplemented
 
 class DefaultShellJobRunner(JobRunner):
+    """Default job runner to use for shell jobs."""
     def __init__(self):
         pass
 

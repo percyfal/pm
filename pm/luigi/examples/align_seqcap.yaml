@@ -15,6 +15,9 @@ picard:
     parent_task: pm.luigi.picard.SortSam
     targets: ../../../tests/luigi/targets.interval_list
     baits: ../../../tests/luigi/targets.interval_list
+  # Example custom config
+  hs_metrics_non_dup:
+    parent_task:
   duplication_metrics:
     parent_task: pm.luigi.picard.SortSam
   alignment_metrics:

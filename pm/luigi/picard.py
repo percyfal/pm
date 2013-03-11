@@ -161,10 +161,10 @@ class DuplicationMetrics(PicardJobTask):
         cls = self.set_parent_task()
         return cls(bam=self.bam.replace(".dup.bam", ".bam"))
     def output(self):
-        return [luigi.LocalTarget(os.path.relpath(self.bam).replace(".bam", ".dup.bam")), 
-                luigi.LocalTarget(os.path.relpath(self.bam).replace(".bam", ".dup_metrics"))]
+        return luigi.LocalTarget(os.path.relpath(self.bam).replace(".bam", ".dup.bam"))
+                                 #luigi.LocalTarget(os.path.relpath(self.bam).replace(".bam", ".dup_metrics"))]
     def args(self):
-        return ["INPUT=", self.input(), "OUTPUT=", self.output()[0], "METRICS_FILE=", self.output()[1]]
+        return ["INPUT=", self.input(), "OUTPUT=", self.output(), "METRICS_FILE=", self.output().fn.replace(".bam", ".dup_metrics")]
 
 class HsMetrics(PicardJobTask):
     _config_subsection = "hs_metrics"
@@ -176,6 +176,9 @@ class HsMetrics(PicardJobTask):
     def jar(self):
         return "CalculateHsMetrics.jar"
     def output(self):
+        if isinstance(self.input(), list):
+            print self.input()
+            print "Files " + str([x.fn for x in self.input()])
         return luigi.LocalTarget(os.path.relpath(self.input().fn).replace(".bam", ".hs_metrics"))
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output(), "BAIT_INTERVALS=", self.baits, "TARGET_INTERVALS=", self.targets]

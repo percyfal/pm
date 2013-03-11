@@ -378,6 +378,11 @@ environment.
 * Have tasks talk to a central planner so task lists can be easily
   monitored via a web page
 
+* Integrate with hadoop. This may be extremely easy: set the job
+  runner for the JobTasks via the config file; by default, they use
+  DefaultShellJobRunner, but could also use a (customized and
+  subclassed?) version of `hadoop_jar.HadoopJarJobRunner`
+
 * How control the number of workers/threads in use? An example best
   explains the issue: alignment with `bwa aln` can be done with
   multiple threads. `bwa sampe` is single-threaded, and uses ~5.4GB
