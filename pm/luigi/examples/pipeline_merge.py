@@ -44,7 +44,7 @@ class AlignSeqcap(JobTask):
             if self.flowcell:
                 flowcells = self.flowcell
             for fc in flowcells:
-                fastq_files = glob.glob(os.path.join(project_indir, s, fc, "{}*.fastq.gz".format(s)))
+                fastq_files = sorted(glob.glob(os.path.join(project_indir, s, fc, "{}*.fastq.gz".format(s))))
                 fl.extend([(x, os.path.join(os.curdir, s, fc)) for x in fastq_files])
                 fastq_list.extend([(x, os.path.join(os.curdir, s, fc)) for x in fastq_files])
             bam_list.append(os.path.join(fl[0][1], os.pardir, os.path.basename(fl[0][0]).replace(".fastq.gz", self.label).replace("_R1_001", "")))

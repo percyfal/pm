@@ -2,7 +2,7 @@ import luigi
 import os
 import glob
 from pm.luigi.job import JobTask
-from pm.luigi.picard import PicardMetrics, SortSam, HsMetrics
+from pm.luigi.picard import PicardMetrics, SortSam, HsMetrics, InputBamFile
 from pm.luigi.fastq import FastqFileLink
 
 class HsMetricsNonDup(HsMetrics):
@@ -25,9 +25,7 @@ class AlignSeqcap(luigi.WrapperTask):
                 if not os.path.exists(x[1]):
                     os.makedirs(x[1])
                 os.symlink(os.path.relpath(x[0], os.path.dirname(y)), y)
-        print bam_list
-        print [PicardMetrics(bam=y) for y in bam_list] + [HsMetricsNonDup(bam=y.replace(".sort.bam", ".dup.dup.bam")) for y in bam_list]
-        return [PicardMetrics(bam=y) for y in bam_list] + [HsMetricsNonDup(bam=y.replace(".sort.bam", ".dup.dup.bam")) for y in bam_list]
+        return [PicardMetrics(bam=y) for y in bam_list] + [HsMetricsNonDup(bam=y.replace(".bam", ".dup.bam")) for y in bam_list]
 
     def run(self):
         print "Analysing files {}".format(self.input())
@@ -46,7 +44,7 @@ class AlignSeqcap(luigi.WrapperTask):
             if self.flowcell:
                 flowcells = self.flowcell
             for fc in flowcells:
-                fastq_files = glob.glob(os.path.join(project_indir, s, fc, "{}*.fastq.gz".format(s)))
+                fastq_files = sorted(glob.glob(os.path.join(project_indir, s, fc, "{}*.fastq.gz".format(s))))
                 fastq_list.extend([(x, os.path.join(os.curdir, s, fc)) for x in fastq_files])
         bam_list = []
         for i in range(0, len(fastq_list), 2):

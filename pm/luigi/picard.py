@@ -121,7 +121,7 @@ class MergeSamFiles(PicardJobTask):
         flowcells = os.listdir(os.path.dirname(self.bam))
         bam_list = []
         for fc in flowcells:
-            sample_runs = list(set([x.replace(".fastq.gz", "").replace(self.read1_suffix, "") for x in glob.glob(os.path.join(os.path.dirname(self.bam), fc, "*{}.fastq.gz".format(self.read1_suffix)))]))
+            sample_runs = list(set([x.replace(".fastq.gz", "").replace(self.read1_suffix, "") for x in sorted(glob.glob(os.path.join(os.path.dirname(self.bam), fc, "*{}.fastq.gz".format(self.read1_suffix))))]))
             bam_list.extend(["{}{}.bam".format(x, cls().label) for x in sample_runs])
         return bam_list
     
@@ -158,11 +158,11 @@ class DuplicationMetrics(PicardJobTask):
     def jar(self):
         return "MarkDuplicates.jar"
     def requires(self):
+        # FIXME: the suffix calculations here and in output are wrong
         cls = self.set_parent_task()
         return cls(bam=self.bam.replace(".dup.bam", ".bam"))
     def output(self):
         return luigi.LocalTarget(os.path.relpath(self.bam).replace(".bam", ".dup.bam"))
-                                 #luigi.LocalTarget(os.path.relpath(self.bam).replace(".bam", ".dup_metrics"))]
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output(), "METRICS_FILE=", self.output().fn.replace(".bam", ".dup_metrics")]
 
@@ -176,9 +176,7 @@ class HsMetrics(PicardJobTask):
     def jar(self):
         return "CalculateHsMetrics.jar"
     def output(self):
-        if isinstance(self.input(), list):
-            print self.input()
-            print "Files " + str([x.fn for x in self.input()])
+        print "Input to hsmetrics: " + str(self.input().fn)
         return luigi.LocalTarget(os.path.relpath(self.input().fn).replace(".bam", ".hs_metrics"))
     def args(self):
         return ["INPUT=", self.input(), "OUTPUT=", self.output(), "BAIT_INTERVALS=", self.baits, "TARGET_INTERVALS=", self.targets]

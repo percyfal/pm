@@ -47,7 +47,8 @@ class AlignSeqcap(luigi.WrapperTask):
             if self.flowcell:
                 flowcells = self.flowcell
             for fc in flowcells:
-                fastq_files = glob.glob(os.path.join(project_indir, s, fc, "{}*.fastq.gz".format(s)))
+                # NB: 'sorted' makes all the difference between MacOSX and Linux...
+                fastq_files = sorted(glob.glob(os.path.join(project_indir, s, fc, "{}*.fastq.gz".format(s))))
                 fastq_list.extend([(x, os.path.join(os.curdir, s, fc)) for x in fastq_files])
         bam_list = []
         for i in range(0, len(fastq_list), 2):

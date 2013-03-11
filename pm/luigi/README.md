@@ -261,6 +261,38 @@ implementation currently depends on the directory structure
 
 See `align_seqcap_merge.yaml` for relevant changes.
 
+### Extending workflows with subclassed tasks ###
+
+It's dead simple to add tasks of a given type. Say you want to
+calculate hybrid selection on bam files that have and haven't been
+mark duplicated. By subclassing an existing task and giving the new
+class it's own configuration file location, you can configure the new
+task to depend on whatever you want. In `pipeline_custom.py` I have
+added the following class:
+
+	class HsMetricsNonDup(HsMetrics):
+		"""Run on non-deduplicated data"""
+		_config_subsection = "hs_metrics_non_dup"
+		parent_task = luigi.Parameter(default="pm.luigi.picard.DuplicationMetrics")
+
+The `picard` configuration section in the configuration file
+`align_seqcap_custom.yaml` now has a new subsection:
+
+	hs_metrics_non_dup:
+		parent_task:
+		# FIXME: inheritance!
+		# Unfortunately need to set this again
+		targets: ../../../tests/luigi/targets.interval_list
+		baits: ../../../tests/luigi/targets.interval_list
+
+Running 
+
+	python pipeline_custom.py  --project J.Doe_00_01 --indir /path/to/ngs_test_data/data/projects --config-file align_seqcap.yaml --sample P001_102_index6
+	
+will add hybrid selection calculation on non-deduplicated bam file for sample *P001_102_index6*:
+
+![CustomDedup](https://raw.github.com/percyfal/pm/feature/luigi-tasks/pm/luigi/doc/example_align_seqcap_custom_dup.png)
+
 ## Implementation ##
 
 The implementation is still under heavy development and testing so
