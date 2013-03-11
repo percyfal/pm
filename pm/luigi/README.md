@@ -377,6 +377,17 @@ environment.
 * UPSTREAM? in `pm.luigi.job.DefaultShellJobRunner._fix_paths`,
   `a.move(b)` doesn't work (I modelled this after
   [luigi hadoop_jar](https://github.com/spotify/luigi/blob/master/luigi/hadoop_jar.py#L63))
+
+* Try: modify __repr__(Task) for better visualization in graphs, via a
+  command line option. Currently the graphs include all options,
+  making it difficult to read
+  
+* The previous issue is related to the wish for a dry run: basically
+  want to generate a picture of the workflow
+  
+* Add pm.luigi.pipelines in which pipeline wrappers are put. In the
+  main script then import different pre-defined pipelines so one could
+  change them via the command line following luigi rules
   
 * Pickling states doesn't currently seem to work?
 
