@@ -51,7 +51,9 @@ The tests depend on the following software to run:
 You also need to install the test data set:
 
 	git clone https://github.com/percyfal/ngs.test.data
-	python setup.py install
+	python setup.py develop
+	
+Note that you **must** use *setup.py develop*.
 
 ## Running the tests  ##
 

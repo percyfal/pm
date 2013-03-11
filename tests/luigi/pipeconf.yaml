@@ -1,13 +1,13 @@
 # section parameter values either affect the exe application or
 # correspond to global application parameters
 bwa:
-  bwaref: ../data/genomes/Hsapiens/hg19/bwa/chr11.fa
+  bwaref: ../../../ngs_test_data/data/genomes/Hsapiens/hg19/bwa/chr11.fa
   input_fastq_file:
     parent_task: pm.luigi.fastq.FastqFileLink
 
 fastq:
   link:
-    indir: ../data/projects/J.Doe_00_01/P001_101_index3/121015_BB002BBBXX
+    indir: ../../../ngs_test_data/data/projects/J.Doe_00_01/P001_101_index3/121015_BB002BBBXX
 
 gatk:
   unifiedgenotyper:
