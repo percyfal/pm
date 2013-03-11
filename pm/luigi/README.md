@@ -245,7 +245,7 @@ Changing the following configuration section (see `align_adapter_trim_seqcap.yam
 
 and running 
 
-	python pipeline.py  --project J.Doe_00_01 --indir ../../../../ngs_test_data/data/projects --config-file align_adapter_trim_seqcap.yaml
+	python pipeline.py  --project J.Doe_00_01 --indir /path/to/ngs_test_data/data/projects --config-file align_adapter_trim_seqcap.yaml
 	
 runs the same pipeline as before, but on adapter-trimmed data.
 
@@ -257,7 +257,7 @@ files and places the result in the sample directory. The
 implementation currently depends on the directory structure
 'sample/fc1', sample/fc2' etc.
 
-	python pipeline_merge.py  --project J.Doe_00_01 --indir ../../../../ngs_test_data/data/projects --config-file align_seqcap_merge.yaml  --sample P001_101_index3
+	python pipeline_merge.py  --project J.Doe_00_01 --indir /path/to/ngs_test_data/data/projects --config-file align_seqcap_merge.yaml  --sample P001_101_index3
 
 results in 
 
